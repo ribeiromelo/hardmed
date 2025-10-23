@@ -72,28 +72,8 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
     ${children}
     
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-    <script>
-        // Global axios config
-        axios.defaults.baseURL = '/api';
-        
-        // Add auth token to all requests
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-        }
-        
-        // Handle auth errors globally
-        axios.interceptors.response.use(
-            response => response,
-            error => {
-                if (error.response?.status === 401) {
-                    localStorage.removeItem('auth_token');
-                    window.location.href = '/login';
-                }
-                return Promise.reject(error);
-            }
-        );
-    </script>
+    <script src="/static/auth.js"></script>
+    <script src="/static/dashboard.js"></script>
 </body>
 </html>
 `;
