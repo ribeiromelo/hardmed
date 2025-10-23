@@ -1,7 +1,7 @@
 -- Insert admin user (password: admin123)
 INSERT OR IGNORE INTO users (id, name, email, password_hash, role) VALUES 
-  (1, 'Admin HardMed', 'admin@hardmedicina.com', '$2a$10$rGXqLw3p7xPgkH8zQqBq7eYJKvJvF7K8hI9gX6KyQ9rX5qF8mN8pe', 'admin'),
-  (2, 'Dr. Erique Silva', 'erique@exemplo.com', '$2a$10$rGXqLw3p7xPgkH8zQqBq7eYJKvJvF7K8hI9gX6KyQ9rX5qF8mN8pe', 'student');
+  (1, 'Admin HardMed', 'admin@hardmedicina.com', '7fe29ccd6ed500c17f1c5afbb9f86f592670e2846e09deb3c74359fc5220c5ef', 'admin'),
+  (2, 'Dr. Erique Silva', 'erique@exemplo.com', '7fe29ccd6ed500c17f1c5afbb9f86f592670e2846e09deb3c74359fc5220c5ef', 'student');
 
 -- Insert specialties
 INSERT OR IGNORE INTO specialties (id, name, slug, description, cover_image, icon, order_index) VALUES 
