@@ -652,6 +652,616 @@ app.get('/aula/:slug', async (c) => {
 });
 
 // ========================================
+// TRILHAS PAGE BY SPECIALTY
+// ========================================
+app.get('/trilhas/:specialtySlug', async (c) => {
+  const specialtySlug = c.req.param('specialtySlug');
+  const { DB } = c.env;
+  
+  const specialty = await db.getSpecialtyBySlug(DB, specialtySlug);
+  if (!specialty) {
+    return c.redirect('/trilhas');
+  }
+  
+  return c.html(
+    <BaseLayout title={`Trilhas de ${specialty.name}`}>
+      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <nav class="text-sm text-gray-400 mb-6">
+          <a href="/" class="hover:text-purple-400">Início</a>
+          <i class="fas fa-chevron-right mx-2"></i>
+          <a href="/trilhas" class="hover:text-purple-400">Trilhas</a>
+          <i class="fas fa-chevron-right mx-2"></i>
+          <span class="text-white">{specialty.name}</span>
+        </nav>
+        
+        <div class="flex items-center mb-8">
+          <i class={`fas ${specialty.icon || 'fa-book-medical'} text-5xl gradient-text mr-4`}></i>
+          <div>
+            <h1 class="text-4xl font-bold">{specialty.name}</h1>
+            <p class="text-gray-400 mt-2">{specialty.description || ''}</p>
+          </div>
+        </div>
+        
+        <div id="tracksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="col-span-full text-center py-12 text-gray-400">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Carregando trilhas...</p>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        const specialtyId = ${specialty.id};
+        
+        async function loadSpecialtyTracks() {
+          try {
+            const response = await axios.get('/tracks');
+            const allTracks = response.data;
+            const tracks = allTracks.filter(t => t.specialty_id === specialtyId);
+            
+            const grid = document.getElementById('tracksGrid');
+            if (tracks.length === 0) {
+              grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha disponível nesta especialidade ainda.</div>';
+              return;
+            }
+            
+            grid.innerHTML = tracks.map(track => \`
+              <a href="/trilha/\${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover">
+                <div class="h-48 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                  <i class="fas fa-book-medical text-6xl gradient-text"></i>
+                </div>
+                <div class="p-6">
+                  <h3 class="font-bold text-xl mb-2">\${track.title}</h3>
+                  <p class="text-gray-400 text-sm mb-4">\${track.description || ''}</p>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">
+                      <i class="fas fa-video mr-1"></i> \${track.total_lessons} aulas
+                    </span>
+                    <span class="text-gray-400">
+                      <i class="fas fa-clock mr-1"></i> \${Math.round(track.duration_minutes / 60)}h
+                    </span>
+                  </div>
+                </div>
+              </a>
+            \`).join('');
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        }
+        
+        loadSpecialtyTracks();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// TRILHAS PAGE (LISTAGEM)
+// ========================================
+app.get('/trilhas', async (c) => {
+  return c.html(
+    <BaseLayout title="Todas as Trilhas">
+      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8">Todas as Trilhas</h1>
+        
+        <div class="flex gap-4 mb-8">
+          <button onclick="filterBySpecialty('all')" class="filter-btn active px-6 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition">
+            Todas
+          </button>
+          <button onclick="filterBySpecialty('cardiologia')" class="filter-btn px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+            Cardiologia
+          </button>
+          <button onclick="filterBySpecialty('nefrologia')" class="filter-btn px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+            Nefrologia
+          </button>
+          <button onclick="filterBySpecialty('clinica')" class="filter-btn px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+            Clínica
+          </button>
+          <button onclick="filterBySpecialty('cirurgia')" class="filter-btn px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition">
+            Cirurgia
+          </button>
+        </div>
+        
+        <div id="tracksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="col-span-full text-center py-12 text-gray-400">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p>Carregando trilhas...</p>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        let allTracks = [];
+        let currentFilter = 'all';
+        
+        async function loadAllTracks() {
+          try {
+            const response = await axios.get('/tracks');
+            allTracks = response.data;
+            displayTracks(allTracks);
+          } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('tracksGrid').innerHTML = '<div class="col-span-full text-center py-12 text-red-400">Erro ao carregar trilhas</div>';
+          }
+        }
+        
+        function displayTracks(tracks) {
+          const grid = document.getElementById('tracksGrid');
+          if (tracks.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha encontrada</div>';
+            return;
+          }
+          
+          grid.innerHTML = tracks.map(track => \`
+            <a href="/trilha/\${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover">
+              <div class="h-48 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                <i class="fas fa-book-medical text-6xl gradient-text"></i>
+              </div>
+              <div class="p-6">
+                <h3 class="font-bold text-xl mb-2">\${track.title}</h3>
+                <p class="text-gray-400 text-sm mb-4 line-clamp-3">\${track.description || ''}</p>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-400">
+                    <i class="fas fa-video mr-1"></i> \${track.total_lessons} aulas
+                  </span>
+                  <span class="text-gray-400">
+                    <i class="fas fa-clock mr-1"></i> \${Math.round(track.duration_minutes / 60)}h
+                  </span>
+                </div>
+                \${track.user_progress ? \`
+                  <div class="mt-4">
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                      <div class="bg-purple-500 h-full rounded-full" style="width: \${track.user_progress}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">\${Math.round(track.user_progress)}% concluído</p>
+                  </div>
+                \` : ''}
+              </div>
+            </a>
+          \`).join('');
+        }
+        
+        function filterBySpecialty(specialty) {
+          currentFilter = specialty;
+          
+          // Update button styles
+          document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-purple-600');
+            btn.classList.add('bg-gray-700');
+          });
+          event.target.classList.remove('bg-gray-700');
+          event.target.classList.add('active', 'bg-purple-600');
+          
+          // Filter tracks
+          if (specialty === 'all') {
+            displayTracks(allTracks);
+          } else {
+            const filtered = allTracks.filter(track => {
+              // This is a simple filter - in production you'd match against specialty_id
+              return track.slug.includes(specialty);
+            });
+            displayTracks(filtered);
+          }
+        }
+        
+        loadAllTracks();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// PERFIL PAGE
+// ========================================
+app.get('/perfil', async (c) => {
+  return c.html(
+    <BaseLayout title="Meu Perfil">
+      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8">Meu Perfil</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2">
+            <div class="bg-gray-800 rounded-xl p-6">
+              <h2 class="text-2xl font-bold mb-6">Informações Pessoais</h2>
+              
+              <form id="profileForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Nome Completo</label>
+                  <input 
+                    type="text" 
+                    id="name"
+                    name="name" 
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Carregando..."
+                  />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">E-mail</label>
+                  <input 
+                    type="email" 
+                    id="email"
+                    name="email" 
+                    readonly
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 opacity-50 cursor-not-allowed"
+                    placeholder="Carregando..."
+                  />
+                </div>
+                
+                <div class="border-t border-gray-700 pt-4 mt-6">
+                  <h3 class="text-lg font-bold mb-4">Alterar Senha</h3>
+                  
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Senha Atual</label>
+                      <input 
+                        type="password" 
+                        name="currentPassword" 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Nova Senha</label>
+                      <input 
+                        type="password" 
+                        name="newPassword" 
+                        minlength="8"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium mb-2">Confirmar Nova Senha</label>
+                      <input 
+                        type="password" 
+                        name="confirmPassword" 
+                        minlength="8"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div id="message" class="hidden p-4 rounded-lg"></div>
+                
+                <button 
+                  type="submit" 
+                  class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
+                >
+                  Salvar Alterações
+                </button>
+              </form>
+            </div>
+          </div>
+          
+          <div>
+            <div class="bg-gray-800 rounded-xl p-6">
+              <h2 class="text-2xl font-bold mb-6">Estatísticas</h2>
+              
+              <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="text-sm text-gray-400">Aulas Concluídas</p>
+                    <p id="totalCompleted" class="text-2xl font-bold">0</p>
+                  </div>
+                  <i class="fas fa-check-circle text-3xl text-green-500"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="text-sm text-gray-400">Trilhas Iniciadas</p>
+                    <p id="totalTracks" class="text-2xl font-bold">0</p>
+                  </div>
+                  <i class="fas fa-book text-3xl text-purple-500"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="text-sm text-gray-400">Progresso Médio</p>
+                    <p id="avgProgress" class="text-2xl font-bold">0%</p>
+                  </div>
+                  <i class="fas fa-chart-line text-3xl text-pink-500"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="text-sm text-gray-400">Membro desde</p>
+                    <p id="memberSince" class="text-sm font-bold">-</p>
+                  </div>
+                  <i class="fas fa-calendar text-3xl text-blue-500"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        async function loadProfile() {
+          try {
+            const userResponse = await axios.get('/user/me');
+            const user = userResponse.data;
+            
+            document.getElementById('name').value = user.name;
+            document.getElementById('email').value = user.email;
+            document.getElementById('memberSince').textContent = new Date(user.created_at).toLocaleDateString('pt-BR');
+            
+            const progressResponse = await axios.get('/user/progress');
+            const progress = progressResponse.data;
+            
+            if (progress.length > 0) {
+              const totalCompleted = progress.reduce((sum, p) => sum + p.completed_lessons, 0);
+              const avgProgress = progress.reduce((sum, p) => sum + p.progress_percentage, 0) / progress.length;
+              
+              document.getElementById('totalCompleted').textContent = totalCompleted;
+              document.getElementById('totalTracks').textContent = progress.length;
+              document.getElementById('avgProgress').textContent = Math.round(avgProgress) + '%';
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        }
+        
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const messageDiv = document.getElementById('message');
+          messageDiv.classList.add('hidden');
+          
+          messageDiv.textContent = 'Funcionalidade de edição será implementada em breve!';
+          messageDiv.classList.remove('hidden', 'bg-red-500/20', 'border-red-500', 'text-red-300');
+          messageDiv.classList.add('bg-blue-500/20', 'border', 'border-blue-500', 'text-blue-300');
+        });
+        
+        loadProfile();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// ADMIN DASHBOARD
+// ========================================
+app.get('/admin', async (c) => {
+  return c.html(
+    <BaseLayout title="Painel Admin">
+      {Header({ user: { id: 1, name: 'Admin', role: 'admin' }, showSearch: false })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Painel Administrativo</h1>
+          <a href="/dashboard" class="text-purple-400 hover:text-purple-300">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+          </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-users text-4xl"></i>
+              <span id="totalUsers" class="text-3xl font-bold">0</span>
+            </div>
+            <p class="text-lg opacity-90">Usuários Totais</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-pink-600 to-pink-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-book text-4xl"></i>
+              <span id="totalTracks" class="text-3xl font-bold">0</span>
+            </div>
+            <p class="text-lg opacity-90">Trilhas Ativas</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-video text-4xl"></i>
+              <span id="totalLessons" class="text-3xl font-bold">0</span>
+            </div>
+            <p class="text-lg opacity-90">Aulas Disponíveis</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-eye text-4xl"></i>
+              <span id="dailyViews" class="text-3xl font-bold">0</span>
+            </div>
+            <p class="text-lg opacity-90">Visualizações Hoje</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-4">Ações Rápidas</h2>
+            <div class="grid grid-cols-2 gap-4">
+              <a href="/admin/trilhas" class="bg-purple-600 hover:bg-purple-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-book-medical text-3xl mb-2"></i>
+                <p class="font-semibold">Gerenciar Trilhas</p>
+              </a>
+              <a href="/admin/aulas" class="bg-pink-600 hover:bg-pink-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-video text-3xl mb-2"></i>
+                <p class="font-semibold">Gerenciar Aulas</p>
+              </a>
+              <a href="/admin/usuarios" class="bg-blue-600 hover:bg-blue-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-users text-3xl mb-2"></i>
+                <p class="font-semibold">Gerenciar Usuários</p>
+              </a>
+              <a href="/admin/relatorios" class="bg-green-600 hover:bg-green-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-chart-bar text-3xl mb-2"></i>
+                <p class="font-semibold">Relatórios</p>
+              </a>
+            </div>
+          </div>
+          
+          <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-4">Usuários Recentes</h2>
+            <div id="recentUsers" class="space-y-3">
+              <p class="text-gray-400 text-center py-4">Carregando...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        async function loadAdminStats() {
+          try {
+            const statsResponse = await axios.get('/admin/stats');
+            const stats = statsResponse.data;
+            
+            document.getElementById('totalUsers').textContent = stats.total_users;
+            document.getElementById('totalTracks').textContent = stats.total_tracks;
+            document.getElementById('totalLessons').textContent = stats.total_lessons;
+            document.getElementById('dailyViews').textContent = stats.daily_views;
+            
+            const usersResponse = await axios.get('/admin/users');
+            const users = usersResponse.data;
+            
+            const recentUsersDiv = document.getElementById('recentUsers');
+            if (users.length > 0) {
+              recentUsersDiv.innerHTML = users.slice(0, 5).map(user => \`
+                <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="font-semibold">\${user.name}</p>
+                    <p class="text-sm text-gray-400">\${user.email}</p>
+                  </div>
+                  <span class="text-xs bg-\${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
+                    \${user.role}
+                  </span>
+                </div>
+              \`).join('');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            if (error.response?.status === 403) {
+              alert('Acesso negado! Apenas administradores podem acessar esta página.');
+              window.location.href = '/dashboard';
+            }
+          }
+        }
+        
+        loadAdminStats();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// ADMIN - GERENCIAR USUÁRIOS
+// ========================================
+app.get('/admin/usuarios', async (c) => {
+  return c.html(
+    <BaseLayout title="Gerenciar Usuários">
+      {Header({ user: { id: 1, name: 'Admin', role: 'admin' } })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Gerenciar Usuários</h1>
+          <a href="/admin" class="text-purple-400 hover:text-purple-300">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar
+          </a>
+        </div>
+        
+        <div class="bg-gray-800 rounded-xl p-6">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-700">
+                  <th class="text-left py-3 px-4">Nome</th>
+                  <th class="text-left py-3 px-4">E-mail</th>
+                  <th class="text-left py-3 px-4">Role</th>
+                  <th class="text-left py-3 px-4">Progresso</th>
+                  <th class="text-left py-3 px-4">Último Acesso</th>
+                  <th class="text-left py-3 px-4">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable">
+                <tr>
+                  <td colspan="6" class="text-center py-8 text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Carregando usuários...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        async function loadUsers() {
+          try {
+            const response = await axios.get('/admin/users');
+            const users = response.data;
+            
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = users.map(user => \`
+              <tr class="border-b border-gray-700 hover:bg-gray-750">
+                <td class="py-3 px-4">\${user.name}</td>
+                <td class="py-3 px-4">\${user.email}</td>
+                <td class="py-3 px-4">
+                  <span class="text-xs bg-\${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
+                    \${user.role}
+                  </span>
+                </td>
+                <td class="py-3 px-4">\${Math.round(user.avg_progress || 0)}%</td>
+                <td class="py-3 px-4 text-sm text-gray-400">
+                  \${user.last_access ? new Date(user.last_access).toLocaleDateString('pt-BR') : 'Nunca'}
+                </td>
+                <td class="py-3 px-4">
+                  <button class="text-blue-400 hover:text-blue-300 mr-2" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="text-red-400 hover:text-red-300" title="Desativar">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </td>
+              </tr>
+            \`).join('');
+          } catch (error) {
+            console.error('Error:', error);
+            if (error.response?.status === 403) {
+              alert('Acesso negado!');
+              window.location.href = '/dashboard';
+            }
+          }
+        }
+        
+        loadUsers();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// PÁGINAS ESTÁTICAS PLACEHOLDER
+// ========================================
+app.get('/termos', (c) => c.html(<BaseLayout title="Termos de Uso">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Termos de Uso</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
+app.get('/privacidade', (c) => c.html(<BaseLayout title="Política de Privacidade">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Política de Privacidade</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
+app.get('/ajuda', (c) => c.html(<BaseLayout title="Central de Ajuda">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Central de Ajuda</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
+app.get('/contato', (c) => c.html(<BaseLayout title="Contato">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Contato</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
+
+// ========================================
 // API ROUTES
 // ========================================
 import apiRoutes from './api-routes';
