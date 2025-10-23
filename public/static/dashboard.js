@@ -1,23 +1,37 @@
-// Setup axios with auth token
+// Setup axios with auth token (only check on protected pages)
 const token = localStorage.getItem('auth_token');
-if (!token) {
+
+// Only redirect if we're on a protected page (not login/cadastro/recuperar-senha)
+const currentPath = window.location.pathname;
+const publicPaths = ['/login', '/cadastro', '/recuperar-senha', '/'];
+const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
+
+if (!token && !isPublicPath) {
   window.location.href = '/login';
 }
 
-axios.defaults.baseURL = '/api';
-axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+if (typeof axios !== 'undefined' && token) {
+  axios.defaults.baseURL = '/api';
+  axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+}
 
 // Handle auth errors
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+if (typeof axios !== 'undefined') {
+  axios.interceptors.response.use(
+    response => response,
+    error => {
+      const currentPath = window.location.pathname;
+      const publicPaths = ['/login', '/cadastro', '/recuperar-senha', '/'];
+      const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
+      
+      if (error.response?.status === 401 && !isPublicPath) {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
-);
+  );
+}
 
 // Dashboard functions
 async function loadDashboard() {

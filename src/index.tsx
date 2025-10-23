@@ -432,6 +432,7 @@ app.get('/dashboard', async (c) => {
       
       {Footer()}
       
+      <script src="/static/dashboard.js"></script>
       <script>{`
         async function loadDashboard() {
           try {
@@ -519,6 +520,7 @@ app.get('/trilha/:slug', async (c) => {
       
       {Footer()}
       
+      <script src="/static/dashboard.js"></script>
       <script>{`
         async function loadTrack() {
           try {
@@ -617,6 +619,7 @@ app.get('/aula/:slug', async (c) => {
       
       {Footer()}
       
+      <script src="/static/dashboard.js"></script>
       <script>{`
         async function loadLesson() {
           try {

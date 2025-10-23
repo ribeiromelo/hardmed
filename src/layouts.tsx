@@ -73,7 +73,6 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
     
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     <script src="/static/auth.js"></script>
-    <script src="/static/dashboard.js"></script>
 </body>
 </html>
 `;
