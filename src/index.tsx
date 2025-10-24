@@ -1112,6 +1112,19 @@ app.get('/admin/trilhas', async (c) => {
             <input type="hidden" id="trackId" />
             
             <div>
+              <label class="block text-sm font-medium mb-2">Especialidade</label>
+              <select id="trackSpecialty" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">Selecione uma especialidade</option>
+                <option value="1">Cardiologia</option>
+                <option value="2">Nefrologia</option>
+                <option value="3">Clínica Médica</option>
+                <option value="4">Cirurgia</option>
+                <option value="5">Ginecologia</option>
+                <option value="6">Pediatria</option>
+              </select>
+            </div>
+            
+            <div>
               <label class="block text-sm font-medium mb-2">Título</label>
               <input type="text" id="trackTitle" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
             </div>

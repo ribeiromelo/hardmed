@@ -100,6 +100,7 @@ async function editTrack(id) {
     // Fill form with track data
     document.getElementById('modalTitle').textContent = 'Editar Trilha';
     document.getElementById('trackId').value = track.id;
+    document.getElementById('trackSpecialty').value = track.specialty_id || '';
     document.getElementById('trackTitle').value = track.title;
     document.getElementById('trackDescription').value = track.description || '';
     document.getElementById('trackLessons').value = track.total_lessons || 0;
@@ -152,12 +153,19 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         const id = document.getElementById('trackId').value;
+        const specialty_id = parseInt(document.getElementById('trackSpecialty').value);
         const title = document.getElementById('trackTitle').value;
         const description = document.getElementById('trackDescription').value;
         const total_lessons = parseInt(document.getElementById('trackLessons').value) || 0;
         const duration_minutes = parseInt(document.getElementById('trackDuration').value) || 0;
         
-        const data = { title, description, total_lessons, duration_minutes };
+        if (!specialty_id) {
+          messageEl.textContent = 'Por favor, selecione uma especialidade';
+          messageEl.className = 'p-4 rounded-lg bg-red-500/20 border border-red-500 text-red-300';
+          return;
+        }
+        
+        const data = { specialty_id, title, description, total_lessons, duration_minutes };
         
         console.log('💾 Saving track:', data);
         
