@@ -105,8 +105,11 @@ function updateCompleteButton(isCompleted) {
   }
 }
 
-async function toggleComplete() {
-  if (!currentLesson) return;
+window.toggleComplete = async function() {
+  if (!currentLesson) {
+    console.error('No lesson loaded yet!');
+    return;
+  }
   
   const btn = document.getElementById('completeBtn');
   const originalHtml = btn.innerHTML;

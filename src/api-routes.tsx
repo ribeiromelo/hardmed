@@ -307,6 +307,131 @@ api.delete('/tracks/:id', async (c) => {
 });
 
 // ========================================
+// SEASONS API ROUTES
+// ========================================
+
+// Get all seasons or filter by track_id
+api.get('/seasons', async (c) => {
+  try {
+    const { DB } = c.env;
+    const trackId = c.req.query('track_id');
+    
+    let query = 'SELECT * FROM seasons';
+    let bindings: any[] = [];
+    
+    if (trackId) {
+      query += ' WHERE track_id = ?';
+      bindings.push(trackId);
+    }
+    
+    query += ' ORDER BY track_id, order_index ASC';
+    
+    const result = await DB.prepare(query).bind(...bindings).all();
+    return c.json(result.results || []);
+  } catch (error) {
+    console.error('Get seasons error:', error);
+    return c.json({ error: 'Erro ao buscar temporadas' }, 500);
+  }
+});
+
+// Create new season (Admin only)
+api.post('/seasons', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { track_id, title, description, order_index, is_active } = body;
+    
+    if (!title) {
+      return c.json({ error: 'Título é obrigatório' }, 400);
+    }
+    if (!track_id) {
+      return c.json({ error: 'Trilha é obrigatória' }, 400);
+    }
+    
+    const result = await DB.prepare(`
+      INSERT INTO seasons (track_id, title, description, order_index, is_active)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(track_id, title, description || null, order_index || 1, is_active !== undefined ? is_active : 1).run();
+    
+    return c.json({
+      id: result.meta.last_row_id,
+      track_id,
+      title,
+      description,
+      order_index: order_index || 1,
+      is_active: is_active !== undefined ? is_active : 1
+    }, 201);
+  } catch (error) {
+    console.error('Create season error:', error);
+    return c.json({ error: 'Erro ao criar temporada' }, 500);
+  }
+});
+
+// Update season (Admin only)
+api.put('/seasons/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const { track_id, title, description, order_index, is_active } = body;
+    
+    // Check if season exists
+    const season = await DB.prepare('SELECT id FROM seasons WHERE id = ?').bind(id).first();
+    if (!season) {
+      return c.json({ error: 'Temporada não encontrada' }, 404);
+    }
+    
+    await DB.prepare(`
+      UPDATE seasons 
+      SET track_id = ?, title = ?, description = ?, order_index = ?, is_active = ?
+      WHERE id = ?
+    `).bind(track_id, title, description || null, order_index, is_active, id).run();
+    
+    return c.json({ message: 'Temporada atualizada com sucesso' });
+  } catch (error) {
+    console.error('Update season error:', error);
+    return c.json({ error: 'Erro ao atualizar temporada' }, 500);
+  }
+});
+
+// Delete season (Admin only)
+api.delete('/seasons/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    
+    // Check if season exists
+    const season = await DB.prepare('SELECT id FROM seasons WHERE id = ?').bind(id).first();
+    if (!season) {
+      return c.json({ error: 'Temporada não encontrada' }, 404);
+    }
+    
+    // Delete season (cascade delete should handle related lessons)
+    await DB.prepare('DELETE FROM seasons WHERE id = ?').bind(id).run();
+    
+    return c.json({ message: 'Temporada deletada com sucesso' });
+  } catch (error) {
+    console.error('Delete season error:', error);
+    return c.json({ error: 'Erro ao deletar temporada' }, 500);
+  }
+});
+
+// ========================================
 // LESSONS API ROUTES
 // ========================================
 

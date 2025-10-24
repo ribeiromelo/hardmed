@@ -933,6 +933,10 @@ app.get('/admin', async (c) => {
                 <i class="fas fa-book-medical text-3xl mb-2"></i>
                 <p class="font-semibold">Gerenciar Trilhas</p>
               </a>
+              <a href="/admin/temporadas" class="bg-indigo-600 hover:bg-indigo-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-layer-group text-3xl mb-2"></i>
+                <p class="font-semibold">Gerenciar Temporadas</p>
+              </a>
               <a href="/admin/aulas" class="bg-pink-600 hover:bg-pink-700 p-4 rounded-lg text-center transition">
                 <i class="fas fa-video text-3xl mb-2"></i>
                 <p class="font-semibold">Gerenciar Aulas</p>
@@ -1109,6 +1113,116 @@ app.get('/admin/trilhas', async (c) => {
       </div>
       
       <script src="/static/admin-tracks.js"></script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// ADMIN - GERENCIAR TEMPORADAS
+// ========================================
+app.get('/admin/temporadas', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
+  return c.html(
+    <BaseLayout title="Gerenciar Temporadas">
+      {Header({ user })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Gerenciar Temporadas</h1>
+          <div class="flex gap-4">
+            <a href="/admin" class="text-purple-400 hover:text-purple-300">
+              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            </a>
+            <button onclick="openCreateModal()" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+              <i class="fas fa-plus mr-2"></i>Nova Temporada
+            </button>
+          </div>
+        </div>
+        
+        <div class="mb-6 flex items-center gap-4">
+          <label class="text-gray-400">Filtrar por trilha:</label>
+          <select id="filterTrack" onchange="filterSeasons()" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Todas as trilhas</option>
+          </select>
+        </div>
+        
+        <div class="bg-gray-800 rounded-xl overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gray-900">
+              <tr>
+                <th class="text-left py-4 px-4 font-semibold">Ordem</th>
+                <th class="text-left py-4 px-4 font-semibold">Título</th>
+                <th class="text-left py-4 px-4 font-semibold">Trilha</th>
+                <th class="text-left py-4 px-4 font-semibold">Status</th>
+                <th class="text-left py-4 px-4 font-semibold">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="seasonsTableBody">
+              <tr>
+                <td colspan="5" class="text-center py-12">
+                  <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-4"></i>
+                  <p class="text-gray-400">Carregando temporadas...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <div id="modalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-gray-700">
+          <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nova Temporada</h2>
+          <form id="seasonForm" class="space-y-4">
+            <input type="hidden" id="seasonId" />
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Trilha *</label>
+              <select id="seasonTrack" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">Selecione uma trilha</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Título *</label>
+              <input type="text" id="seasonTitle" required placeholder="Ex: Temporada 1: Fundamentos" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Descrição</label>
+              <textarea id="seasonDescription" rows="3" placeholder="Breve descrição da temporada" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Ordem de Exibição *</label>
+              <input type="number" id="seasonOrder" required min="1" value="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+            
+            <div class="flex items-center">
+              <input type="checkbox" id="seasonActive" checked class="w-5 h-5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500" />
+              <label for="seasonActive" class="ml-2 text-sm font-medium">Temporada ativa (visível para os alunos)</label>
+            </div>
+            
+            <div id="formMessage" class="hidden p-4 rounded-lg"></div>
+            
+            <div class="flex gap-4">
+              <button type="button" onclick="closeModal()" class="flex-1 bg-gray-700 py-3 rounded-lg hover:bg-gray-600 transition">
+                Cancelar
+              </button>
+              <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <script src="/static/admin-seasons.js"></script>
     </BaseLayout>
   );
 });

@@ -117,7 +117,7 @@ async function loadTrack(slug) {
 }
 
 // Toggle season visibility
-function toggleSeason(index) {
+window.toggleSeason = function(index) {
   const seasonDiv = document.getElementById('season-' + index);
   const chevron = document.getElementById('chevron-' + index);
   
