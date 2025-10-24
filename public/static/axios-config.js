@@ -1,55 +1,53 @@
-// Configure axios globally with auth token
-(function() {
-  // Get token from cookie or localStorage
-  function getAuthToken() {
-    const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
-    if (cookieMatch) {
-      return cookieMatch[1];
-    }
-    return localStorage.getItem('auth_token');
-  }
-
-  // Wait for axios to be loaded
-  function setupAxios() {
+// SIMPLE AXIOS CONFIG - NO COMPLEXITY
+if (typeof window.axiosConfigured === 'undefined') {
+  window.axiosConfigured = false;
+  
+  function configureAxios() {
     if (typeof axios === 'undefined') {
-      setTimeout(setupAxios, 100);
+      setTimeout(configureAxios, 50);
       return;
     }
-
-    const token = getAuthToken();
+    
+    if (window.axiosConfigured) return;
+    
+    // Get token
+    let token = null;
+    const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
+    if (cookieMatch) {
+      token = cookieMatch[1];
+    } else {
+      token = localStorage.getItem('auth_token');
+    }
+    
+    console.log('🔧 Configuring axios...');
+    console.log('   Token found:', token ? 'YES' : 'NO');
+    
+    // Configure axios
+    axios.defaults.baseURL = '/api';
     
     if (token) {
-      axios.defaults.baseURL = '/api';
       axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-      axios.defaults.headers.common['Content-Type'] = 'application/json';
     }
-
-    // Add response interceptor for auth errors
+    
+    // Simple error handler
     axios.interceptors.response.use(
       response => response,
       error => {
         if (error.response?.status === 401) {
-          const currentPath = window.location.pathname;
-          const publicPaths = ['/login', '/cadastro', '/recuperar-senha', '/'];
-          const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
-          
-          if (!isPublicPath) {
-            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-            localStorage.removeItem('auth_token');
+          console.warn('Auth failed - clearing token');
+          document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
+          localStorage.removeItem('auth_token');
+          if (!window.location.pathname.includes('login')) {
             window.location.href = '/login';
           }
         }
         return Promise.reject(error);
       }
     );
-
-    console.log('✅ Axios configured with token:', token ? token.substring(0, 20) + '...' : 'none');
+    
+    window.axiosConfigured = true;
+    console.log('✅ Axios configured!');
   }
-
-  // Start setup
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupAxios);
-  } else {
-    setupAxios();
-  }
-})();
+  
+  configureAxios();
+}

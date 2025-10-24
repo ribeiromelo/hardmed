@@ -1,5 +1,4 @@
-// Axios is configured globally in axios-config.js
-// This file contains dashboard-specific functions
+// Dashboard functions - axios is configured in axios-config.js
 
 // Dashboard functions
 async function loadDashboard() {
@@ -62,10 +61,7 @@ async function loadDashboard() {
       myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha encontrada</div>';
     }
   } catch (error) {
-    console.error('Error:', error);
-    if (error.response?.status === 401) {
-      window.location.href = '/login';
-    }
+    console.error('Dashboard error:', error);
   }
 }
 
@@ -125,11 +121,7 @@ async function loadTrack(slug) {
       `;
     }
   } catch (error) {
-    console.error('Error:', error);
-    const trackContent = document.getElementById('trackContent');
-    if (trackContent) {
-      trackContent.innerHTML = '<div class="text-center py-12 text-red-400">Erro ao carregar trilha</div>';
-    }
+    console.error('Track error:', error);
   }
 }
 
@@ -171,6 +163,6 @@ async function loadLesson(slug) {
       downloads.innerHTML = '<a href="' + lesson.pdf_url + '" download class="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition"><i class="fas fa-file-pdf mr-2"></i>Download PDF</a>';
     }
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Lesson error:', error);
   }
 }
