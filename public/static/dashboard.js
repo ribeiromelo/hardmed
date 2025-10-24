@@ -1,50 +1,5 @@
-// Get token from cookie or localStorage
-function getAuthToken() {
-  // Try to get from cookie first
-  const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
-  if (cookieMatch) {
-    return cookieMatch[1];
-  }
-  // Fallback to localStorage
-  return localStorage.getItem('auth_token');
-}
-
-// Setup axios with auth token (only check on protected pages)
-const token = getAuthToken();
-
-// Only redirect if we're on a protected page (not login/cadastro/recuperar-senha)
-const currentPath = window.location.pathname;
-const publicPaths = ['/login', '/cadastro', '/recuperar-senha', '/'];
-const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
-
-if (!token && !isPublicPath) {
-  window.location.href = '/login';
-}
-
-if (typeof axios !== 'undefined' && token) {
-  axios.defaults.baseURL = '/api';
-  axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-}
-
-// Handle auth errors
-if (typeof axios !== 'undefined') {
-  axios.interceptors.response.use(
-    response => response,
-    error => {
-      const currentPath = window.location.pathname;
-      const publicPaths = ['/login', '/cadastro', '/recuperar-senha', '/'];
-      const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
-      
-      if (error.response?.status === 401 && !isPublicPath) {
-        // Clear both cookie and localStorage
-        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-        localStorage.removeItem('auth_token');
-        window.location.href = '/login';
-      }
-      return Promise.reject(error);
-    }
-  );
-}
+// Axios is configured globally in axios-config.js
+// This file contains dashboard-specific functions
 
 // Dashboard functions
 async function loadDashboard() {
