@@ -306,6 +306,177 @@ api.delete('/tracks/:id', async (c) => {
   }
 });
 
+// ========================================
+// LESSONS API ROUTES
+// ========================================
+
+// Get all lessons (optionally filtered by track)
+api.get('/lessons', async (c) => {
+  try {
+    const { DB } = c.env;
+    const trackId = c.req.query('track_id');
+    
+    let query = `
+      SELECT l.*, s.title as season_title, s.track_id, t.title as track_title
+      FROM lessons l
+      JOIN seasons s ON l.season_id = s.id
+      JOIN tracks t ON s.track_id = t.id
+    `;
+    
+    if (trackId) {
+      query += ` WHERE s.track_id = ${trackId}`;
+    }
+    
+    query += ` ORDER BY s.track_id, l.season_id, l.order_index`;
+    
+    const result = await DB.prepare(query).all();
+    return c.json(result.results || []);
+  } catch (error) {
+    console.error('Get lessons error:', error);
+    return c.json({ error: 'Erro ao buscar aulas' }, 500);
+  }
+});
+
+// Get seasons by track_id
+api.get('/seasons', async (c) => {
+  try {
+    const { DB } = c.env;
+    const trackId = c.req.query('track_id');
+    
+    if (!trackId) {
+      return c.json({ error: 'track_id é obrigatório' }, 400);
+    }
+    
+    const result = await DB.prepare(`
+      SELECT * FROM seasons WHERE track_id = ? ORDER BY order_index
+    `).bind(trackId).all();
+    
+    return c.json(result.results || []);
+  } catch (error) {
+    console.error('Get seasons error:', error);
+    return c.json({ error: 'Erro ao buscar temporadas' }, 500);
+  }
+});
+
+// Create new lesson (Admin only)
+api.post('/lessons', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { season_id, title, description, video_url, duration_minutes, pdf_url } = body;
+    
+    if (!season_id || !title || !video_url) {
+      return c.json({ error: 'Temporada, título e URL do vídeo são obrigatórios' }, 400);
+    }
+    
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    const result = await DB.prepare(`
+      INSERT INTO lessons (season_id, title, slug, description, video_url, duration_minutes, pdf_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      season_id,
+      title,
+      slug,
+      description,
+      video_url,
+      duration_minutes,
+      pdf_url
+    }, 201);
+  } catch (error) {
+    console.error('Create lesson error:', error);
+    return c.json({ error: 'Erro ao criar aula' }, 500);
+  }
+});
+
+// Update lesson (Admin only)
+api.put('/lessons/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const { season_id, title, description, video_url, duration_minutes, pdf_url } = body;
+    
+    if (!season_id || !title || !video_url) {
+      return c.json({ error: 'Temporada, título e URL do vídeo são obrigatórios' }, 400);
+    }
+    
+    // Generate new slug from title
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    await DB.prepare(`
+      UPDATE lessons 
+      SET season_id = ?, title = ?, slug = ?, description = ?, video_url = ?, duration_minutes = ?, pdf_url = ?
+      WHERE id = ?
+    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null, id).run();
+    
+    return c.json({ 
+      id,
+      season_id,
+      title,
+      slug,
+      description,
+      video_url,
+      duration_minutes,
+      pdf_url
+    });
+  } catch (error) {
+    console.error('Update lesson error:', error);
+    return c.json({ error: 'Erro ao atualizar aula' }, 500);
+  }
+});
+
+// Delete lesson (Admin only)
+api.delete('/lessons/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    
+    // Check if lesson exists
+    const lesson = await DB.prepare('SELECT id FROM lessons WHERE id = ?').bind(id).first();
+    if (!lesson) {
+      return c.json({ error: 'Aula não encontrada' }, 404);
+    }
+    
+    // Delete lesson
+    await DB.prepare('DELETE FROM lessons WHERE id = ?').bind(id).run();
+    
+    return c.json({ message: 'Aula deletada com sucesso' });
+  } catch (error) {
+    console.error('Delete lesson error:', error);
+    return c.json({ error: 'Erro ao deletar aula' }, 500);
+  }
+});
+
 api.get('/tracks/:slug', async (c) => {
   try {
     const slug = c.req.param('slug');

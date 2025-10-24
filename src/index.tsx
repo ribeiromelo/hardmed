@@ -1165,6 +1165,114 @@ app.get('/admin/trilhas', async (c) => {
 });
 
 // ========================================
+// ADMIN - GERENCIAR AULAS
+// ========================================
+app.get('/admin/aulas', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
+  return c.html(
+    <BaseLayout title="Gerenciar Aulas">
+      {Header({ user })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Gerenciar Aulas</h1>
+          <div class="flex gap-4">
+            <a href="/admin" class="text-purple-400 hover:text-purple-300">
+              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            </a>
+            <button onclick="openCreateModal()" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+              <i class="fas fa-plus mr-2"></i>Nova Aula
+            </button>
+          </div>
+        </div>
+        
+        <div class="bg-gray-800 rounded-xl p-6 mb-6">
+          <label class="block text-sm font-medium mb-2">Filtrar por Trilha</label>
+          <select id="filterTrack" class="w-full md:w-96 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Todas as trilhas</option>
+          </select>
+        </div>
+        
+        <div id="lessonsTable" class="bg-gray-800 rounded-xl p-6">
+          <div class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-4"></i>
+            <p class="text-gray-400">Carregando aulas...</p>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <div id="modalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-gray-700">
+          <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nova Aula</h2>
+          <form id="lessonForm" class="space-y-4">
+            <input type="hidden" id="lessonId" />
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Trilha *</label>
+              <select id="lessonTrack" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">Selecione uma trilha</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Temporada *</label>
+              <select id="lessonSeason" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">Selecione uma temporada</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Título *</label>
+              <input type="text" id="lessonTitle" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Descrição</label>
+              <textarea id="lessonDescription" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">URL do Vídeo *</label>
+                <input type="url" id="lessonVideoUrl" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Duração (minutos)</label>
+                <input type="number" id="lessonDuration" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">URL do PDF (opcional)</label>
+              <input type="url" id="lessonPdfUrl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
+            </div>
+            
+            <div id="formMessage" class="hidden p-4 rounded-lg"></div>
+            
+            <div class="flex gap-4">
+              <button type="button" onclick="closeModal()" class="flex-1 bg-gray-700 py-3 rounded-lg hover:bg-gray-600 transition">
+                Cancelar
+              </button>
+              <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <script src="/static/admin-lessons.js"></script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
 // TEST LOGIN PAGE
 // ========================================
 app.get('/test-login', (c) => {
