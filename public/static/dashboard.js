@@ -19,29 +19,36 @@ async function loadDashboard() {
       userNameEl.textContent = user.name;
     }
     
-    console.log('📈 Fetching user progress...');
-    const progress = await api.get('/user/progress');
-    console.log('   Progress data received:', progress.length, 'tracks');
-    
-    if (progress.length > 0) {
-      const totalProgress = progress.reduce((sum, p) => sum + p.progress_percentage, 0) / progress.length;
-      const totalCompleted = progress.reduce((sum, p) => sum + p.completed_lessons, 0);
-      const totalLessons = progress.reduce((sum, p) => sum + p.total_lessons, 0);
-      
-      const totalProgressEl = document.getElementById('totalProgress');
-      const progressBarEl = document.getElementById('progressBar');
-      const completedLessonsEl = document.getElementById('completedLessons');
-      const totalLessonsEl = document.getElementById('totalLessons');
-      
-      if (totalProgressEl) totalProgressEl.textContent = Math.round(totalProgress) + '%';
-      if (progressBarEl) progressBarEl.style.width = totalProgress + '%';
-      if (completedLessonsEl) completedLessonsEl.textContent = totalCompleted;
-      if (totalLessonsEl) totalLessonsEl.textContent = totalLessons;
-    }
-    
     console.log('🎯 Fetching tracks...');
     const tracks = await api.get('/tracks');
     console.log('   Tracks received:', tracks.length, 'tracks');
+    
+    // Calculate total progress considering ALL lessons from ALL tracks
+    let totalCompletedLessons = 0;
+    let totalLessonsCount = 0;
+    
+    tracks.forEach(track => {
+      totalLessonsCount += track.total_lessons || 0;
+      totalCompletedLessons += track.completed_lessons || 0;
+    });
+    
+    console.log('📊 Total progress calculated:', {
+      totalCompletedLessons,
+      totalLessonsCount,
+      percentage: totalLessonsCount > 0 ? Math.round((totalCompletedLessons / totalLessonsCount) * 100) : 0
+    });
+    
+    const totalProgress = totalLessonsCount > 0 ? (totalCompletedLessons / totalLessonsCount) * 100 : 0;
+    
+    const totalProgressEl = document.getElementById('totalProgress');
+    const progressBarEl = document.getElementById('progressBar');
+    const completedLessonsEl = document.getElementById('completedLessons');
+    const totalLessonsEl = document.getElementById('totalLessons');
+    
+    if (totalProgressEl) totalProgressEl.textContent = Math.round(totalProgress) + '%';
+    if (progressBarEl) progressBarEl.style.width = totalProgress + '%';
+    if (completedLessonsEl) completedLessonsEl.textContent = totalCompletedLessons;
+    if (totalLessonsEl) totalLessonsEl.textContent = totalLessonsCount;
     
     const myTracksDiv = document.getElementById('myTracks');
     if (myTracksDiv && tracks.length > 0) {

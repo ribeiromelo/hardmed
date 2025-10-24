@@ -239,9 +239,11 @@ export async function updateLessonProgress(
   isCompleted: boolean
 ): Promise<void> {
   // Update or create lesson progress
+  const completedAtValue = isCompleted ? 'CURRENT_TIMESTAMP' : 'NULL';
+  
   await db.prepare(`
     INSERT INTO user_lesson_progress (user_id, lesson_id, watch_time_seconds, last_position_seconds, is_completed, completed_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ${isCompleted ? 'CURRENT_TIMESTAMP' : 'NULL'}, CURRENT_TIMESTAMP)
+    VALUES (?, ?, ?, ?, ?, ${completedAtValue}, CURRENT_TIMESTAMP)
     ON CONFLICT(user_id, lesson_id) DO UPDATE SET
       watch_time_seconds = excluded.watch_time_seconds,
       last_position_seconds = excluded.last_position_seconds,
