@@ -86,7 +86,14 @@ document.addEventListener('DOMContentLoaded', function() {
           throw new Error(result.error || 'Erro ao fazer login');
         }
         
+        // Save token as cookie (expires in 7 days)
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7);
+        document.cookie = `auth_token=${result.token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        
+        // Also save to localStorage as backup
         localStorage.setItem('auth_token', result.token);
+        
         window.location.href = '/dashboard';
       } catch (error) {
         errorDiv.textContent = error.message || 'Erro ao fazer login';
@@ -110,6 +117,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Logout function
 function logout() {
+  // Remove cookie
+  document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+  // Remove localStorage
   localStorage.removeItem('auth_token');
   window.location.href = '/login';
 }

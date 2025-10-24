@@ -6,6 +6,7 @@ import * as auth from './auth';
 import * as db from './db';
 import { BaseLayout, Header, Footer } from './layouts';
 import { html } from 'hono/html';
+import { getUserFromToken } from './middleware';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -195,46 +196,6 @@ app.get('/cadastro', (c) => {
           </p>
         </div>
       </div>
-      
-      <script>{`
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const form = e.target;
-          const formData = new FormData(form);
-          const data = {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            password: formData.get('password')
-          };
-          
-          const confirmPassword = formData.get('confirmPassword');
-          
-          const errorDiv = document.getElementById('error');
-          const successDiv = document.getElementById('success');
-          errorDiv.classList.add('hidden');
-          successDiv.classList.add('hidden');
-          
-          if (data.password !== confirmPassword) {
-            errorDiv.textContent = 'As senhas não coincidem';
-            errorDiv.classList.remove('hidden');
-            return;
-          }
-          
-          try {
-            const response = await axios.post('/api/auth/register', data);
-            successDiv.textContent = 'Conta criada com sucesso! Redirecionando...';
-            successDiv.classList.remove('hidden');
-            
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 1500);
-          } catch (error) {
-            errorDiv.textContent = error.response?.data?.error || 'Erro ao criar conta';
-            errorDiv.classList.remove('hidden');
-          }
-        });
-      `}</script>
     </BaseLayout>
   );
 });
@@ -299,33 +260,6 @@ app.get('/login', (c) => {
           </p>
         </div>
       </div>
-      
-      <script>{`
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const form = e.target;
-          const formData = new FormData(form);
-          const data = {
-            email: formData.get('email'),
-            password: formData.get('password')
-          };
-          
-          const errorDiv = document.getElementById('error');
-          errorDiv.classList.add('hidden');
-          
-          try {
-            const response = await axios.post('/api/auth/login', data);
-            localStorage.setItem('auth_token', response.data.token);
-            axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token;
-            
-            window.location.href = '/dashboard';
-          } catch (error) {
-            errorDiv.textContent = error.response?.data?.error || 'Erro ao fazer login';
-            errorDiv.classList.remove('hidden');
-          }
-        });
-      `}</script>
     </BaseLayout>
   );
 });
@@ -372,16 +306,6 @@ app.get('/recuperar-senha', (c) => {
           </p>
         </div>
       </div>
-      
-      <script>{`
-        document.getElementById('recoverForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const messageDiv = document.getElementById('message');
-          messageDiv.textContent = 'Se o e-mail existir, enviaremos instruções para redefinir sua senha.';
-          messageDiv.classList.remove('hidden');
-        });
-      `}</script>
     </BaseLayout>
   );
 });
@@ -390,13 +314,18 @@ app.get('/recuperar-senha', (c) => {
 // USER AREA ROUTES
 // ========================================
 app.get('/dashboard', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user) {
+    return c.redirect('/login');
+  }
+  
   return c.html(
     <BaseLayout title="Dashboard">
-      {Header({ user: { id: 1, name: 'Dr. Erique', role: 'student' }, showSearch: true })}
+      {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 mb-8">
-          <h1 class="text-3xl font-bold mb-2">Olá, <span id="userName">Dr. Erique</span> 👋</h1>
+          <h1 class="text-3xl font-bold mb-2">Olá, <span id="userName">{user.name}</span> 👋</h1>
           <p class="text-lg opacity-90">Continue de onde parou</p>
         </div>
         
@@ -498,10 +427,14 @@ app.get('/dashboard', async (c) => {
 
 app.get('/trilha/:slug', async (c) => {
   const slug = c.req.param('slug');
+  const user = await getUserFromToken(c);
+  if (!user) {
+    return c.redirect('/login');
+  }
   
   return c.html(
     <BaseLayout title="Trilha">
-      {Header({ user: { id: 1, name: 'Dr. Erique', role: 'student' }, showSearch: true })}
+      {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
         <nav class="text-sm text-gray-400 mb-6">
@@ -590,10 +523,14 @@ app.get('/trilha/:slug', async (c) => {
 
 app.get('/aula/:slug', async (c) => {
   const slug = c.req.param('slug');
+  const user = await getUserFromToken(c);
+  if (!user) {
+    return c.redirect('/login');
+  }
   
   return c.html(
     <BaseLayout title="Aula">
-      {Header({ user: { id: 1, name: 'Dr. Erique', role: 'student' } })}
+      {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
         <div id="lessonContent" class="flex gap-8">
@@ -657,6 +594,7 @@ app.get('/aula/:slug', async (c) => {
 app.get('/trilhas/:specialtySlug', async (c) => {
   const specialtySlug = c.req.param('specialtySlug');
   const { DB } = c.env;
+  const user = await getUserFromToken(c);
   
   const specialty = await db.getSpecialtyBySlug(DB, specialtySlug);
   if (!specialty) {
@@ -665,7 +603,7 @@ app.get('/trilhas/:specialtySlug', async (c) => {
   
   return c.html(
     <BaseLayout title={`Trilhas de ${specialty.name}`}>
-      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
         <nav class="text-sm text-gray-400 mb-6">
@@ -744,9 +682,11 @@ app.get('/trilhas/:specialtySlug', async (c) => {
 // TRILHAS PAGE (LISTAGEM)
 // ========================================
 app.get('/trilhas', async (c) => {
+  const user = await getUserFromToken(c);
+  
   return c.html(
     <BaseLayout title="Todas as Trilhas">
-      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-8">Todas as Trilhas</h1>
@@ -864,9 +804,14 @@ app.get('/trilhas', async (c) => {
 // PERFIL PAGE
 // ========================================
 app.get('/perfil', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user) {
+    return c.redirect('/login');
+  }
+  
   return c.html(
     <BaseLayout title="Meu Perfil">
-      {Header({ user: { id: 1, name: 'Usuário', role: 'student' }, showSearch: true })}
+      {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-8">Meu Perfil</h1>
@@ -1039,9 +984,14 @@ app.get('/perfil', async (c) => {
 // ADMIN DASHBOARD
 // ========================================
 app.get('/admin', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
   return c.html(
     <BaseLayout title="Painel Admin">
-      {Header({ user: { id: 1, name: 'Admin', role: 'admin' }, showSearch: false })}
+      {Header({ user, showSearch: false })}
       
       <main class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
@@ -1167,9 +1117,14 @@ app.get('/admin', async (c) => {
 // ADMIN - GERENCIAR USUÁRIOS
 // ========================================
 app.get('/admin/usuarios', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
   return c.html(
     <BaseLayout title="Gerenciar Usuários">
-      {Header({ user: { id: 1, name: 'Admin', role: 'admin' } })}
+      {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">

@@ -1,5 +1,16 @@
+// Get token from cookie or localStorage
+function getAuthToken() {
+  // Try to get from cookie first
+  const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
+  if (cookieMatch) {
+    return cookieMatch[1];
+  }
+  // Fallback to localStorage
+  return localStorage.getItem('auth_token');
+}
+
 // Setup axios with auth token (only check on protected pages)
-const token = localStorage.getItem('auth_token');
+const token = getAuthToken();
 
 // Only redirect if we're on a protected page (not login/cadastro/recuperar-senha)
 const currentPath = window.location.pathname;
@@ -25,6 +36,8 @@ if (typeof axios !== 'undefined') {
       const isPublicPath = publicPaths.some(path => currentPath === path || currentPath.startsWith(path));
       
       if (error.response?.status === 401 && !isPublicPath) {
+        // Clear both cookie and localStorage
+        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
       }
