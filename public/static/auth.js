@@ -58,15 +58,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Check if we're on the login page
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
+    // Remove any existing listeners to avoid duplicates
+    const newForm = loginForm.cloneNode(true);
+    loginForm.parentNode.replaceChild(newForm, loginForm);
+    
+    newForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const form = e.target;
       const formData = new FormData(form);
-      const data = {
-        email: formData.get('email'),
-        password: formData.get('password')
-      };
+      const email = formData.get('email');
+      const password = formData.get('password');
       
       const errorDiv = document.getElementById('error');
       errorDiv.classList.add('hidden');
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify({ email, password })
         });
         
         const result = await response.json();
@@ -89,11 +91,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save token as cookie (expires in 7 days)
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 7);
-        document.cookie = `auth_token=${result.token}; path=/; expires=${expiryDate.toUTCString()}; SameSite=Lax`;
+        document.cookie = 'auth_token=' + result.token + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
         
         // Also save to localStorage as backup
         localStorage.setItem('auth_token', result.token);
         
+        // Force redirect
         window.location.href = '/dashboard';
       } catch (error) {
         errorDiv.textContent = error.message || 'Erro ao fazer login';

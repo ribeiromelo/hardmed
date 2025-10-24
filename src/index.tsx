@@ -1209,6 +1209,54 @@ app.get('/admin/usuarios', async (c) => {
 });
 
 // ========================================
+// TEST LOGIN PAGE
+// ========================================
+app.get('/test-login', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Test Login</title>
+<style>body{font-family:Arial;max-width:400px;margin:50px auto;padding:20px;background:#1a1a2e;color:#fff}input,button{width:100%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #666}input{background:#333;color:#fff}button{background:#667eea;color:#fff;border:none;cursor:pointer;font-weight:bold}button:hover{background:#764ba2}#result{margin-top:20px;padding:15px;border-radius:5px;display:none}.success,.error,.info{display:block!important}.success{background:#10b981}.error{background:#ef4444}.info{background:#3b82f6}</style>
+</head><body>
+<h1>🧪 Test Login</h1>
+<form id="testForm">
+<input type="email" id="email" placeholder="Email" value="admin@hardmedicina.com">
+<input type="password" id="password" placeholder="Senha" value="admin123">
+<button type="submit">Login</button>
+</form>
+<div id="result"></div>
+<div style="margin-top:20px;font-size:12px;color:#888">
+<p><strong>Credenciais:</strong></p>
+<p>Admin: admin@hardmedicina.com / admin123</p>
+<p>Student: erique@exemplo.com / admin123</p>
+</div>
+<script>
+const resultDiv=document.getElementById('result');
+function showResult(message,type){resultDiv.textContent=message;resultDiv.className=type;}
+document.getElementById('testForm').addEventListener('submit',async(e)=>{
+e.preventDefault();
+const email=document.getElementById('email').value;
+const password=document.getElementById('password').value;
+showResult('Fazendo login...','info');
+try{
+const response=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+const result=await response.json();
+if(!response.ok){showResult('❌ Erro: '+(result.error||'Login falhou'),'error');return;}
+const expiryDate=new Date();expiryDate.setDate(expiryDate.getDate()+7);
+document.cookie='auth_token='+result.token+'; path=/; expires='+expiryDate.toUTCString()+'; SameSite=Lax';
+showResult('✅ Login OK! Redirecionando...','success');
+setTimeout(()=>{window.location.href='/dashboard';},1500);
+}catch(error){showResult('❌ Erro: '+error.message,'error');}
+});
+window.addEventListener('load',()=>{
+const cookie=document.cookie.match(/auth_token=([^;]+)/);
+if(cookie){showResult('ℹ️ Token existente: '+cookie[1].substring(0,30)+'...','info');}
+});
+</script>
+</body></html>
+  `);
+});
+
+// ========================================
 // PÁGINAS ESTÁTICAS PLACEHOLDER
 // ========================================
 app.get('/termos', (c) => c.html(<BaseLayout title="Termos de Uso">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Termos de Uso</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
