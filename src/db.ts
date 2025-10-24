@@ -151,7 +151,12 @@ export async function getLessonsBySeason(
   const lessonsWithProgress: LessonWithProgress[] = [];
   
   for (const lesson of lessons.results || []) {
-    const lessonWithProgress: LessonWithProgress = { ...lesson };
+    const lessonWithProgress: LessonWithProgress = { 
+      ...lesson,
+      is_completed: false,
+      watch_time_seconds: 0,
+      last_position_seconds: 0
+    };
     
     if (userId) {
       const progress = await db.prepare(
@@ -186,7 +191,12 @@ export async function getLessonBySlug(
   
   if (!lesson) return null;
   
-  const lessonWithProgress: LessonWithProgress = { ...lesson };
+  const lessonWithProgress: LessonWithProgress = { 
+    ...lesson,
+    is_completed: false,
+    watch_time_seconds: 0,
+    last_position_seconds: 0
+  };
   
   if (userId) {
     const progress = await db.prepare(
