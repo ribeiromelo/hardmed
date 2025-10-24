@@ -3,8 +3,11 @@
 let currentLesson = null;
 
 window.addEventListener('DOMContentLoaded', () => {
-  if (typeof lessonSlug !== 'undefined') {
-    loadLesson(lessonSlug);
+  const slug = window.lessonSlug;
+  if (slug) {
+    loadLesson(slug);
+  } else {
+    console.error('No lessonSlug found!');
   }
 });
 

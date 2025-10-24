@@ -5,7 +5,9 @@ let seasons = [];
 // Load track with all seasons and lessons
 async function loadTrack(slug) {
   try {
+    console.log('🔍 Loading track:', slug);
     const data = await api.get('/tracks/' + slug);
+    console.log('✅ Track data received:', data);
     currentTrack = data.track;
     seasons = data.seasons;
     
@@ -100,7 +102,8 @@ async function loadTrack(slug) {
       ` : ''}
     `;
   } catch (error) {
-    console.error('Error loading track:', error);
+    console.error('❌ Error loading track:', error);
+    console.error('Error details:', error.message, error.stack);
     document.getElementById('trackContent').innerHTML = `
       <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
         <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
@@ -129,8 +132,27 @@ function toggleSeason(index) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Track page loaded, slug:', window.trackSlug);
+  console.log('🔧 API available?', typeof window.api !== 'undefined');
+  
   const slug = window.trackSlug;
-  if (slug) {
+  if (!slug) {
+    console.error('❌ No trackSlug found!');
+    return;
+  }
+  
+  // Wait for API to be available
+  if (typeof window.api === 'undefined') {
+    console.log('⏳ Waiting for API to load...');
+    setTimeout(() => {
+      if (typeof window.api !== 'undefined') {
+        console.log('✅ API loaded, starting track load');
+        loadTrack(slug);
+      } else {
+        console.error('❌ API still not available after 100ms');
+      }
+    }, 100);
+  } else {
     loadTrack(slug);
   }
 });

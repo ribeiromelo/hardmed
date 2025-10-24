@@ -428,8 +428,8 @@ app.get('/trilha/:slug', async (c) => {
       
       {Footer()}
       
+      {html`<script>window.trackSlug = '${slug}';</script>`}
       <script src="/static/track.js"></script>
-      <script>{`const trackSlug = '${slug}';`}</script>
     </BaseLayout>
   );
 });
@@ -472,10 +472,8 @@ app.get('/aula/:slug', async (c) => {
       
       {Footer()}
       
+      {html`<script>window.lessonSlug = '${slug}';</script>`}
       <script src="/static/lesson.js"></script>
-      <script>{`
-        const lessonSlug = '${slug}';
-      `}</script>
     </BaseLayout>
   );
 });
