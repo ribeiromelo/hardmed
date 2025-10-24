@@ -120,19 +120,27 @@ window.toggleComplete = async function() {
     
     console.log('💾 Toggling completion status...');
     
+    const wasCompleted = currentLesson.is_completed;
+    
     if (currentLesson.is_completed) {
       // Mark as incomplete
       await api.post('/progress/incomplete', { lesson_id: currentLesson.id });
-      currentLesson.is_completed = false;
       console.log('   Marked as incomplete');
     } else {
       // Mark as complete
       await api.post('/progress/complete', { lesson_id: currentLesson.id });
-      currentLesson.is_completed = true;
       console.log('   Marked as complete');
     }
     
+    // Only update state if request succeeded
+    currentLesson.is_completed = !wasCompleted;
     updateCompleteButton(currentLesson.is_completed);
+    
+    // Show success message
+    const message = currentLesson.is_completed 
+      ? 'Aula marcada como concluída!' 
+      : 'Aula marcada como não concluída';
+    showAlert(message, 'Sucesso', 'success');
     
   } catch (error) {
     console.error('❌ Error toggling completion:', error);

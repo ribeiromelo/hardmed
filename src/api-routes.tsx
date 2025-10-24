@@ -632,6 +632,9 @@ api.post('/progress/complete', async (c) => {
       `).bind(userId, lesson_id).run();
     }
     
+    // Update track progress
+    await db.updateLessonProgress(DB, userId, lesson_id, 0, 0, true);
+    
     return c.json({ message: 'Aula marcada como concluída', completed: true });
   } catch (error) {
     console.error('Complete lesson error:', error);
@@ -656,6 +659,9 @@ api.post('/progress/incomplete', async (c) => {
       UPDATE user_lesson_progress SET is_completed = 0, updated_at = CURRENT_TIMESTAMP 
       WHERE user_id = ? AND lesson_id = ?
     `).bind(userId, lesson_id).run();
+    
+    // Update track progress
+    await db.updateLessonProgress(DB, userId, lesson_id, 0, 0, false);
     
     return c.json({ message: 'Aula marcada como não concluída', completed: false });
   } catch (error) {
