@@ -627,8 +627,8 @@ api.post('/progress/complete', async (c) => {
     } else {
       // Insert new progress
       await DB.prepare(`
-        INSERT INTO user_lesson_progress (user_id, lesson_id, is_completed, created_at, updated_at)
-        VALUES (?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO user_lesson_progress (user_id, lesson_id, is_completed, updated_at)
+        VALUES (?, ?, 1, CURRENT_TIMESTAMP)
       `).bind(userId, lesson_id).run();
     }
     
