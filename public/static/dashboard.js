@@ -1,21 +1,19 @@
-// Dashboard functions - axios is configured in axios-config.js
+// Dashboard functions - Using native Fetch API (NO AXIOS)
 
-// Dashboard functions
 async function loadDashboard() {
   console.log('📊 Loading dashboard...');
   
   try {
     console.log('👤 Fetching user data...');
-    const userResponse = await axios.get('/user/me');
-    console.log('   User data received:', userResponse.data);
+    const user = await api.get('/user/me');
+    console.log('   User data received:', user);
     const userNameEl = document.getElementById('userName');
     if (userNameEl) {
-      userNameEl.textContent = userResponse.data.name;
+      userNameEl.textContent = user.name;
     }
     
     console.log('📈 Fetching user progress...');
-    const progressResponse = await axios.get('/user/progress');
-    const progress = progressResponse.data;
+    const progress = await api.get('/user/progress');
     console.log('   Progress data received:', progress.length, 'tracks');
     
     if (progress.length > 0) {
@@ -35,9 +33,7 @@ async function loadDashboard() {
     }
     
     console.log('🎯 Fetching tracks...');
-    const tracksResponse = await axios.get('/tracks');
-    console.log('   Tracks response:', tracksResponse);
-    const tracks = tracksResponse.data;
+    const tracks = await api.get('/tracks');
     console.log('   Tracks received:', tracks.length, 'tracks');
     
     const myTracksDiv = document.getElementById('myTracks');
@@ -73,12 +69,6 @@ async function loadDashboard() {
     console.log('✅ Dashboard loaded successfully!');
   } catch (error) {
     console.error('❌ Dashboard error:', error);
-    console.error('   Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    });
     
     // Show error message to user
     const myTracksDiv = document.getElementById('myTracks');
@@ -91,8 +81,8 @@ async function loadDashboard() {
 // Track page functions
 async function loadTrack(slug) {
   try {
-    const response = await axios.get('/tracks/' + slug);
-    const { track, seasons } = response.data;
+    const data = await api.get('/tracks/' + slug);
+    const { track, seasons } = data;
     
     const trackBreadcrumb = document.getElementById('trackBreadcrumb');
     if (trackBreadcrumb) {
@@ -160,8 +150,7 @@ function toggleSeason(index) {
 // Lesson page functions
 async function loadLesson(slug) {
   try {
-    const response = await axios.get('/lessons/' + slug);
-    const lesson = response.data;
+    const lesson = await api.get('/lessons/' + slug);
     
     document.title = lesson.title + ' | HardMedicina';
     

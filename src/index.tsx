@@ -363,17 +363,8 @@ app.get('/dashboard', async (c) => {
       
       <script src="/static/dashboard.js"></script>
       <script>{`
-        // Wait for axios to be configured before loading dashboard
-        function waitForAxiosAndLoad() {
-          if (window.axiosConfigured) {
-            console.log('✅ Axios ready, loading dashboard...');
-            loadDashboard();
-          } else {
-            console.log('⏳ Waiting for axios configuration...');
-            setTimeout(waitForAxiosAndLoad, 50);
-          }
-        }
-        waitForAxiosAndLoad();
+        // Load dashboard immediately (using native Fetch API)
+        loadDashboard();
       `}</script>
     </BaseLayout>
   );
@@ -1025,17 +1016,8 @@ app.get('/admin', async (c) => {
       
       <script src="/static/admin.js"></script>
       <script>{`
-        // Wait for axios to be configured before loading admin stats
-        function waitForAxiosAndLoadAdmin() {
-          if (window.axiosConfigured) {
-            console.log('✅ Axios ready, loading admin stats...');
-            loadAdminStats();
-          } else {
-            console.log('⏳ Waiting for axios configuration...');
-            setTimeout(waitForAxiosAndLoadAdmin, 50);
-          }
-        }
-        waitForAxiosAndLoadAdmin();
+        // Load admin stats immediately
+        loadAdminStats();
       `}</script>
     </BaseLayout>
   );
@@ -1092,17 +1074,8 @@ app.get('/admin/usuarios', async (c) => {
       
       <script src="/static/admin-users.js"></script>
       <script>{`
-        // Wait for axios to be configured before loading users
-        function waitForAxiosAndLoadUsers() {
-          if (window.axiosConfigured) {
-            console.log('✅ Axios ready, loading users...');
-            loadUsers();
-          } else {
-            console.log('⏳ Waiting for axios configuration...');
-            setTimeout(waitForAxiosAndLoadUsers, 50);
-          }
-        }
-        waitForAxiosAndLoadUsers();
+        // Load users immediately
+        loadUsers();
       `}</script>
     </BaseLayout>
   );
@@ -1187,17 +1160,8 @@ app.get('/admin/trilhas', async (c) => {
       
       <script src="/static/admin-tracks.js"></script>
       <script>{`
-        // Wait for axios to be configured before loading tracks
-        function waitForAxiosAndLoadTracks() {
-          if (window.axiosConfigured) {
-            console.log('✅ Axios ready, loading admin tracks...');
-            loadTracks();
-          } else {
-            console.log('⏳ Waiting for axios configuration...');
-            setTimeout(waitForAxiosAndLoadTracks, 50);
-          }
-        }
-        waitForAxiosAndLoadTracks();
+        // Load tracks immediately
+        loadTracks();
       `}</script>
     </BaseLayout>
   );

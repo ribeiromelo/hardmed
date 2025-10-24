@@ -71,8 +71,8 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
 <body class="bg-gray-900 text-white">
     ${children}
     
-    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-    <script src="/static/axios-config.js"></script>
+    <!-- Native Fetch API helper (NO AXIOS DEPENDENCY) -->
+    <script src="/static/api.js"></script>
     <script src="/static/auth.js"></script>
 </body>
 </html>

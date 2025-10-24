@@ -1,13 +1,11 @@
-// Admin users management functions
+// Admin users management - Using native Fetch API
 
 async function loadUsers() {
   console.log('👥 Loading users...');
   
   try {
     console.log('📡 Fetching users...');
-    const response = await axios.get('/admin/users');
-    console.log('   Response:', response);
-    const users = response.data;
+    const users = await api.get('/admin/users');
     console.log('   Users received:', users.length, 'users');
     
     const tbody = document.getElementById('usersTable');
@@ -43,14 +41,8 @@ async function loadUsers() {
     console.log('✅ Users loaded successfully!');
   } catch (error) {
     console.error('❌ Error loading users:', error);
-    console.error('   Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    });
     
-    if (error.response?.status === 403) {
+    if (error.status === 403) {
       alert('Acesso negado!');
       window.location.href = '/dashboard';
     }

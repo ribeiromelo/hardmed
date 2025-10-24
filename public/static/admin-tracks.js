@@ -1,13 +1,11 @@
-// Admin tracks management functions
+// Admin tracks management - Using native Fetch API
 
 async function loadTracks() {
   console.log('📊 Loading admin tracks...');
   
   try {
     console.log('🎯 Fetching tracks...');
-    const response = await axios.get('/tracks');
-    console.log('   Response:', response);
-    const tracks = response.data;
+    const tracks = await api.get('/tracks');
     console.log('   Tracks received:', tracks.length, 'tracks');
     
     const table = document.getElementById('tracksTable');
@@ -53,12 +51,6 @@ async function loadTracks() {
     console.log('✅ Admin tracks loaded successfully!');
   } catch (error) {
     console.error('❌ Error loading tracks:', error);
-    console.error('   Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    });
     
     const table = document.getElementById('tracksTable');
     if (table) {

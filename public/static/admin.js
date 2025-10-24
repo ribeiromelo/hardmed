@@ -1,12 +1,11 @@
-// Admin dashboard functions
+// Admin dashboard - Using native Fetch API
 
 async function loadAdminStats() {
   console.log('📊 Loading admin stats...');
   
   try {
     console.log('📈 Fetching stats...');
-    const statsResponse = await axios.get('/admin/stats');
-    const stats = statsResponse.data;
+    const stats = await api.get('/admin/stats');
     console.log('   Stats received:', stats);
     
     document.getElementById('totalUsers').textContent = stats.total_users;
@@ -15,8 +14,7 @@ async function loadAdminStats() {
     document.getElementById('dailyViews').textContent = stats.daily_views;
     
     console.log('👥 Fetching users...');
-    const usersResponse = await axios.get('/admin/users');
-    const users = usersResponse.data;
+    const users = await api.get('/admin/users');
     console.log('   Users received:', users.length, 'users');
     
     const recentUsersDiv = document.getElementById('recentUsers');
@@ -37,14 +35,8 @@ async function loadAdminStats() {
     console.log('✅ Admin stats loaded successfully!');
   } catch (error) {
     console.error('❌ Error loading admin stats:', error);
-    console.error('   Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      data: error.response?.data
-    });
     
-    if (error.response?.status === 403) {
+    if (error.status === 403) {
       alert('Acesso negado! Apenas administradores podem acessar esta página.');
       window.location.href = '/dashboard';
     }
