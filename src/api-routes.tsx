@@ -183,6 +183,123 @@ api.get('/tracks', async (c) => {
   }
 });
 
+// Create new track (Admin only)
+api.post('/tracks', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { title, description, total_lessons, duration_minutes } = body;
+    
+    if (!title) {
+      return c.json({ error: 'Título é obrigatório' }, 400);
+    }
+    
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    const result = await DB.prepare(`
+      INSERT INTO tracks (title, slug, description, total_lessons, duration_minutes)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(title, slug, description || null, total_lessons || 0, duration_minutes || 0).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      title,
+      slug,
+      description,
+      total_lessons,
+      duration_minutes
+    }, 201);
+  } catch (error) {
+    console.error('Create track error:', error);
+    return c.json({ error: 'Erro ao criar trilha' }, 500);
+  }
+});
+
+// Update track (Admin only)
+api.put('/tracks/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const { title, description, total_lessons, duration_minutes } = body;
+    
+    if (!title) {
+      return c.json({ error: 'Título é obrigatório' }, 400);
+    }
+    
+    // Generate new slug from title
+    const slug = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    await DB.prepare(`
+      UPDATE tracks 
+      SET title = ?, slug = ?, description = ?, total_lessons = ?, duration_minutes = ?
+      WHERE id = ?
+    `).bind(title, slug, description || null, total_lessons || 0, duration_minutes || 0, id).run();
+    
+    return c.json({ 
+      id,
+      title,
+      slug,
+      description,
+      total_lessons,
+      duration_minutes
+    });
+  } catch (error) {
+    console.error('Update track error:', error);
+    return c.json({ error: 'Erro ao atualizar trilha' }, 500);
+  }
+});
+
+// Delete track (Admin only)
+api.delete('/tracks/:id', async (c) => {
+  try {
+    const userRole = c.get('userRole');
+    if (userRole !== 'admin') {
+      return c.json({ error: 'Acesso negado' }, 403);
+    }
+    
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    
+    // Check if track exists
+    const track = await DB.prepare('SELECT id FROM tracks WHERE id = ?').bind(id).first();
+    if (!track) {
+      return c.json({ error: 'Trilha não encontrada' }, 404);
+    }
+    
+    // Delete related data first (cascade)
+    await DB.prepare('DELETE FROM user_progress WHERE lesson_id IN (SELECT id FROM lessons WHERE track_id = ?)').bind(id).run();
+    await DB.prepare('DELETE FROM lessons WHERE track_id = ?').bind(id).run();
+    await DB.prepare('DELETE FROM tracks WHERE id = ?').bind(id).run();
+    
+    return c.json({ message: 'Trilha deletada com sucesso' });
+  } catch (error) {
+    console.error('Delete track error:', error);
+    return c.json({ error: 'Erro ao deletar trilha' }, 500);
+  }
+});
+
 api.get('/tracks/:slug', async (c) => {
   try {
     const slug = c.req.param('slug');
