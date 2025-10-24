@@ -428,70 +428,8 @@ app.get('/trilha/:slug', async (c) => {
       
       {Footer()}
       
-      <script src="/static/dashboard.js"></script>
-      <script>{`
-        async function loadTrack() {
-          try {
-            const response = await axios.get('/api/tracks/${slug}');
-            const { track, seasons } = response.data;
-            
-            document.getElementById('trackBreadcrumb').textContent = track.title;
-            
-            document.getElementById('trackContent').innerHTML = \`
-              <div class="bg-gray-800 rounded-2xl p-8 mb-8">
-                <h1 class="text-4xl font-bold mb-4">\${track.title}</h1>
-                <p class="text-gray-300 text-lg mb-6">\${track.description || ''}</p>
-                <div class="flex items-center space-x-6 text-sm text-gray-400">
-                  <span><i class="fas fa-video mr-2"></i>\${track.total_lessons} aulas</span>
-                  <span><i class="fas fa-clock mr-2"></i>\${Math.round(track.duration_minutes / 60)}h</span>
-                </div>
-              </div>
-              
-              <div class="space-y-4">
-                \${seasons.map((season, index) => \`
-                  <div class="bg-gray-800 rounded-xl overflow-hidden">
-                    <button onclick="toggleSeason(\${index})" class="w-full flex items-center justify-between p-6 hover:bg-gray-750 transition">
-                      <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">\${index + 1}</div>
-                        <div class="text-left">
-                          <h3 class="text-xl font-bold">\${season.title}</h3>
-                          <p class="text-sm text-gray-400">\${season.lessons.length} aulas</p>
-                        </div>
-                      </div>
-                      <i class="fas fa-chevron-down" id="chevron-\${index}"></i>
-                    </button>
-                    <div id="season-\${index}" class="hidden border-t border-gray-700">
-                      \${season.lessons.map(lesson => \`
-                        <a href="/aula/\${lesson.slug}" class="flex items-center justify-between p-4 hover:bg-gray-750 transition border-b border-gray-700 last:border-0">
-                          <div class="flex items-center space-x-4">
-                            <i class="fas fa-\${lesson.is_completed ? 'check-circle text-green-500' : 'play-circle text-purple-500'} text-xl"></i>
-                            <div>
-                              <h4 class="font-semibold">\${lesson.title}</h4>
-                              <p class="text-sm text-gray-400">\${lesson.duration_minutes} min</p>
-                            </div>
-                          </div>
-                          <i class="fas fa-chevron-right text-gray-600"></i>
-                        </a>
-                      \`).join('')}
-                    </div>
-                  </div>
-                \`).join('')}
-              </div>
-            \`;
-          } catch (error) {
-            console.error('Error:', error);
-          }
-        }
-        
-        function toggleSeason(index) {
-          const seasonDiv = document.getElementById('season-' + index);
-          const chevron = document.getElementById('chevron-' + index);
-          seasonDiv.classList.toggle('hidden');
-          chevron.classList.toggle('rotate-180');
-        }
-        
-        loadTrack();
-      `}</script>
+      <script src="/static/track.js"></script>
+      <script>{`const trackSlug = '${slug}';`}</script>
     </BaseLayout>
   );
 });
