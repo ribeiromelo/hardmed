@@ -1209,6 +1209,161 @@ app.get('/admin/usuarios', async (c) => {
 });
 
 // ========================================
+// ADMIN - GERENCIAR TRILHAS
+// ========================================
+app.get('/admin/trilhas', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
+  return c.html(
+    <BaseLayout title="Gerenciar Trilhas">
+      {Header({ user })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Gerenciar Trilhas</h1>
+          <div class="flex gap-4">
+            <a href="/admin" class="text-purple-400 hover:text-purple-300">
+              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            </a>
+            <button onclick="openCreateModal()" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+              <i class="fas fa-plus mr-2"></i>Nova Trilha
+            </button>
+          </div>
+        </div>
+        
+        <div id="tracksTable" class="bg-gray-800 rounded-xl p-6">
+          <div class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-4"></i>
+            <p class="text-gray-400">Carregando trilhas...</p>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <div id="modalOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-gray-700">
+          <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nova Trilha</h2>
+          <form id="trackForm" class="space-y-4">
+            <input type="hidden" id="trackId" />
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Título</label>
+              <input type="text" id="trackTitle" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Descrição</label>
+              <textarea id="trackDescription" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Total de Aulas</label>
+                <input type="number" id="trackLessons" required min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Duração (minutos)</label>
+                <input type="number" id="trackDuration" required min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+            </div>
+            
+            <div id="formMessage" class="hidden p-4 rounded-lg"></div>
+            
+            <div class="flex gap-4">
+              <button type="button" onclick="closeModal()" class="flex-1 bg-gray-700 py-3 rounded-lg hover:bg-gray-600 transition">
+                Cancelar
+              </button>
+              <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <script src="/static/dashboard.js"></script>
+      <script>{`
+        async function loadTracks() {
+          try {
+            const response = await axios.get('/api/tracks');
+            const tracks = response.data;
+            
+            const table = document.getElementById('tracksTable');
+            table.innerHTML = \`
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="border-b border-gray-700">
+                    <tr>
+                      <th class="text-left py-3 px-4">ID</th>
+                      <th class="text-left py-3 px-4">Título</th>
+                      <th class="text-left py-3 px-4">Aulas</th>
+                      <th class="text-left py-3 px-4">Duração</th>
+                      <th class="text-left py-3 px-4">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    \${tracks.map(track => \`
+                      <tr class="border-b border-gray-700 hover:bg-gray-750">
+                        <td class="py-3 px-4">#\${track.id}</td>
+                        <td class="py-3 px-4 font-semibold">\${track.title}</td>
+                        <td class="py-3 px-4">\${track.total_lessons || 0} aulas</td>
+                        <td class="py-3 px-4">\${Math.round((track.duration_minutes || 0) / 60)}h</td>
+                        <td class="py-3 px-4">
+                          <button onclick="editTrack(\${track.id})" class="text-blue-400 hover:text-blue-300 mr-3">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button onclick="deleteTrack(\${track.id})" class="text-red-400 hover:text-red-300">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    \`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            \`;
+          } catch (error) {
+            console.error('Error loading tracks:', error);
+            document.getElementById('tracksTable').innerHTML = '<p class="text-center text-red-400 py-12">Erro ao carregar trilhas</p>';
+          }
+        }
+        
+        function openCreateModal() {
+          document.getElementById('modalTitle').textContent = 'Nova Trilha';
+          document.getElementById('trackForm').reset();
+          document.getElementById('trackId').value = '';
+          document.getElementById('modalOverlay').classList.remove('hidden');
+        }
+        
+        function closeModal() {
+          document.getElementById('modalOverlay').classList.add('hidden');
+        }
+        
+        async function editTrack(id) {
+          alert('Função de edição será implementada em breve!');
+        }
+        
+        async function deleteTrack(id) {
+          if (!confirm('Tem certeza que deseja excluir esta trilha?')) return;
+          alert('Função de exclusão será implementada em breve!');
+        }
+        
+        document.getElementById('trackForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          alert('Função de salvar será implementada em breve!');
+        });
+        
+        loadTracks();
+      `}</script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
 // TEST LOGIN PAGE
 // ========================================
 app.get('/test-login', (c) => {
