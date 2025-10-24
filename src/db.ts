@@ -176,9 +176,13 @@ export async function getLessonBySlug(
   slug: string,
   userId?: number
 ): Promise<LessonWithProgress | null> {
-  const lesson = await db.prepare(
-    'SELECT * FROM lessons WHERE slug = ? AND is_active = 1'
-  ).bind(slug).first<Lesson>();
+  const lesson = await db.prepare(`
+    SELECT l.*, s.title as season_title, s.track_id, t.title as track_title
+    FROM lessons l
+    JOIN seasons s ON l.season_id = s.id
+    JOIN tracks t ON s.track_id = t.id
+    WHERE l.slug = ? AND l.is_active = 1
+  `).bind(slug).first<Lesson>();
   
   if (!lesson) return null;
   

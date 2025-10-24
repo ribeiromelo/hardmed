@@ -508,56 +508,35 @@ app.get('/aula/:slug', async (c) => {
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
-        <div id="lessonContent" class="flex gap-8">
-          <div class="flex-1">
-            <div class="bg-black rounded-xl overflow-hidden mb-6" style="aspect-ratio: 16/9;">
-              <iframe id="videoPlayer" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
-            </div>
-            
-            <h1 id="lessonTitle" class="text-3xl font-bold mb-4">Carregando...</h1>
-            <p id="lessonDescription" class="text-gray-400 mb-6"></p>
-            
-            <div id="keyPoints" class="bg-gray-800 rounded-xl p-6 mb-6"></div>
-            
-            <div id="downloads" class="flex gap-4"></div>
+        <div id="lessonContent" class="max-w-6xl mx-auto">
+          <div class="bg-black rounded-xl overflow-hidden mb-6" style="aspect-ratio: 16/9;">
+            <iframe id="videoPlayer" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
           </div>
           
-          <div class="w-96 bg-gray-800 rounded-xl p-6">
-            <h2 class="font-bold text-xl mb-4">Próximas Aulas</h2>
-            <div id="nextLessons" class="space-y-3"></div>
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex-1">
+              <h1 id="lessonTitle" class="text-3xl font-bold mb-2">Carregando...</h1>
+              <p id="lessonMeta" class="text-gray-400 text-sm"></p>
+            </div>
+            <button id="completeBtn" onclick="toggleComplete()" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold">
+              <i class="fas fa-check mr-2"></i>
+              <span id="completeBtnText">Marcar como concluída</span>
+            </button>
           </div>
+          
+          <p id="lessonDescription" class="text-gray-300 mb-6"></p>
+          
+          <div id="keyPoints" class="bg-gray-800 rounded-xl p-6 mb-6"></div>
+          
+          <div id="downloads" class="flex gap-4"></div>
         </div>
       </main>
       
       {Footer()}
       
-      <script src="/static/dashboard.js"></script>
+      <script src="/static/lesson.js"></script>
       <script>{`
-        async function loadLesson() {
-          try {
-            const response = await axios.get('/api/lessons/${slug}');
-            const lesson = response.data;
-            
-            document.title = lesson.title + ' | HardMedicina';
-            document.getElementById('lessonTitle').textContent = lesson.title;
-            document.getElementById('lessonDescription').textContent = lesson.description || '';
-            document.getElementById('videoPlayer').src = lesson.video_url;
-            
-            if (lesson.key_points) {
-              const points = JSON.parse(lesson.key_points);
-              document.getElementById('keyPoints').innerHTML = '<h3 class="font-bold mb-3">Pontos-chave</h3><ul class="space-y-2">' + 
-                points.map(p => '<li class="flex items-start"><i class="fas fa-check text-green-500 mr-2 mt-1"></i><span>' + p + '</span></li>').join('') + 
-                '</ul>';
-            }
-            
-            if (lesson.pdf_url) {
-              document.getElementById('downloads').innerHTML = '<a href="' + lesson.pdf_url + '" download class="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition"><i class="fas fa-file-pdf mr-2"></i>Download PDF</a>';
-            }
-          } catch (error) {
-            console.error('Error:', error);
-          }
-        }
-        loadLesson();
+        const lessonSlug = '${slug}';
       `}</script>
     </BaseLayout>
   );

@@ -477,6 +477,68 @@ api.delete('/lessons/:id', async (c) => {
   }
 });
 
+// Mark lesson as completed
+api.post('/progress/complete', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { lesson_id } = body;
+    
+    if (!lesson_id) {
+      return c.json({ error: 'lesson_id é obrigatório' }, 400);
+    }
+    
+    // Check if already completed
+    const existing = await DB.prepare(`
+      SELECT id FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?
+    `).bind(userId, lesson_id).first();
+    
+    if (existing) {
+      // Update is_completed
+      await DB.prepare(`
+        UPDATE user_lesson_progress SET is_completed = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `).bind(existing.id).run();
+    } else {
+      // Insert new progress
+      await DB.prepare(`
+        INSERT INTO user_lesson_progress (user_id, lesson_id, is_completed, created_at, updated_at)
+        VALUES (?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `).bind(userId, lesson_id).run();
+    }
+    
+    return c.json({ message: 'Aula marcada como concluída', completed: true });
+  } catch (error) {
+    console.error('Complete lesson error:', error);
+    return c.json({ error: 'Erro ao marcar aula como concluída' }, 500);
+  }
+});
+
+// Mark lesson as incomplete
+api.post('/progress/incomplete', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { lesson_id } = body;
+    
+    if (!lesson_id) {
+      return c.json({ error: 'lesson_id é obrigatório' }, 400);
+    }
+    
+    // Mark as incomplete (update is_completed to 0)
+    await DB.prepare(`
+      UPDATE user_lesson_progress SET is_completed = 0, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_id = ? AND lesson_id = ?
+    `).bind(userId, lesson_id).run();
+    
+    return c.json({ message: 'Aula marcada como não concluída', completed: false });
+  } catch (error) {
+    console.error('Incomplete lesson error:', error);
+    return c.json({ error: 'Erro ao marcar aula como não concluída' }, 500);
+  }
+});
+
 api.get('/tracks/:slug', async (c) => {
   try {
     const slug = c.req.param('slug');
