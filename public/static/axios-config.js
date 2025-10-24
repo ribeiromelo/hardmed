@@ -1,6 +1,15 @@
-// SIMPLE AXIOS CONFIG - NO COMPLEXITY
+// AXIOS CONFIG - Token injection in EVERY request
 if (typeof window.axiosConfigured === 'undefined') {
   window.axiosConfigured = false;
+  
+  // Helper function to get token
+  window.getAuthToken = function() {
+    const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
+    if (cookieMatch) {
+      return cookieMatch[1];
+    }
+    return localStorage.getItem('auth_token');
+  };
   
   function configureAxios() {
     if (typeof axios === 'undefined') {
@@ -10,31 +19,40 @@ if (typeof window.axiosConfigured === 'undefined') {
     
     if (window.axiosConfigured) return;
     
-    // Get token
-    let token = null;
-    const cookieMatch = document.cookie.match(/auth_token=([^;]+)/);
-    if (cookieMatch) {
-      token = cookieMatch[1];
-    } else {
-      token = localStorage.getItem('auth_token');
-    }
-    
+    const token = window.getAuthToken();
     console.log('🔧 Configuring axios...');
-    console.log('   Token found:', token ? 'YES' : 'NO');
+    console.log('   Token found:', token ? 'YES (' + token.substring(0, 20) + '...)' : 'NO');
     
-    // Configure axios
+    // Base URL
     axios.defaults.baseURL = '/api';
     
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-    }
-    
-    // Simple error handler
-    axios.interceptors.response.use(
-      response => response,
+    // REQUEST interceptor - inject token in EVERY request
+    axios.interceptors.request.use(
+      config => {
+        const currentToken = window.getAuthToken();
+        if (currentToken) {
+          config.headers.Authorization = 'Bearer ' + currentToken;
+          console.log('🔑 Token injected in request to:', config.url);
+        } else {
+          console.warn('⚠️ No token found for request to:', config.url);
+        }
+        return config;
+      },
       error => {
+        return Promise.reject(error);
+      }
+    );
+    
+    // RESPONSE interceptor - handle auth errors
+    axios.interceptors.response.use(
+      response => {
+        console.log('✅ Request successful:', response.config.url);
+        return response;
+      },
+      error => {
+        console.error('❌ Request failed:', error.config?.url, error.response?.status);
         if (error.response?.status === 401) {
-          console.warn('Auth failed - clearing token');
+          console.warn('🚪 Auth failed - redirecting to login');
           document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
           localStorage.removeItem('auth_token');
           if (!window.location.pathname.includes('login')) {
@@ -46,7 +64,7 @@ if (typeof window.axiosConfigured === 'undefined') {
     );
     
     window.axiosConfigured = true;
-    console.log('✅ Axios configured!');
+    console.log('✅ Axios configured with interceptors!');
   }
   
   configureAxios();

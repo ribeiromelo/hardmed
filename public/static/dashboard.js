@@ -2,15 +2,21 @@
 
 // Dashboard functions
 async function loadDashboard() {
+  console.log('📊 Loading dashboard...');
+  
   try {
+    console.log('👤 Fetching user data...');
     const userResponse = await axios.get('/user/me');
+    console.log('   User data received:', userResponse.data);
     const userNameEl = document.getElementById('userName');
     if (userNameEl) {
       userNameEl.textContent = userResponse.data.name;
     }
     
+    console.log('📈 Fetching user progress...');
     const progressResponse = await axios.get('/user/progress');
     const progress = progressResponse.data;
+    console.log('   Progress data received:', progress.length, 'tracks');
     
     if (progress.length > 0) {
       const totalProgress = progress.reduce((sum, p) => sum + p.progress_percentage, 0) / progress.length;
@@ -28,8 +34,11 @@ async function loadDashboard() {
       if (totalLessonsEl) totalLessonsEl.textContent = totalLessons;
     }
     
+    console.log('🎯 Fetching tracks...');
     const tracksResponse = await axios.get('/tracks');
+    console.log('   Tracks response:', tracksResponse);
     const tracks = tracksResponse.data;
+    console.log('   Tracks received:', tracks.length, 'tracks');
     
     const myTracksDiv = document.getElementById('myTracks');
     if (myTracksDiv && tracks.length > 0) {
@@ -60,8 +69,22 @@ async function loadDashboard() {
     } else if (myTracksDiv) {
       myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha encontrada</div>';
     }
+    
+    console.log('✅ Dashboard loaded successfully!');
   } catch (error) {
-    console.error('Dashboard error:', error);
+    console.error('❌ Dashboard error:', error);
+    console.error('   Error details:', {
+      message: error.message,
+      response: error.response,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    // Show error message to user
+    const myTracksDiv = document.getElementById('myTracks');
+    if (myTracksDiv) {
+      myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-red-400">Erro ao carregar trilhas. Verifique o console.</div>';
+    }
   }
 }
 

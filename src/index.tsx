@@ -363,63 +363,17 @@ app.get('/dashboard', async (c) => {
       
       <script src="/static/dashboard.js"></script>
       <script>{`
-        async function loadDashboard() {
-          try {
-            const userResponse = await axios.get('/api/user/me');
-            document.getElementById('userName').textContent = userResponse.data.name;
-            
-            const progressResponse = await axios.get('/api/user/progress');
-            const progress = progressResponse.data;
-            
-            if (progress.length > 0) {
-              const totalProgress = progress.reduce((sum, p) => sum + p.progress_percentage, 0) / progress.length;
-              const totalCompleted = progress.reduce((sum, p) => sum + p.completed_lessons, 0);
-              const totalLessons = progress.reduce((sum, p) => sum + p.total_lessons, 0);
-              
-              document.getElementById('totalProgress').textContent = Math.round(totalProgress) + '%';
-              document.getElementById('progressBar').style.width = totalProgress + '%';
-              document.getElementById('completedLessons').textContent = totalCompleted;
-              document.getElementById('totalLessons').textContent = totalLessons;
-            }
-            
-            const tracksResponse = await axios.get('/api/tracks');
-            const tracks = tracksResponse.data;
-            
-            const myTracksDiv = document.getElementById('myTracks');
-            if (tracks.length > 0) {
-              myTracksDiv.innerHTML = tracks.slice(0, 6).map(track => \`
-                <a href="/trilha/\${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover">
-                  <div class="h-40 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
-                    <i class="fas fa-book-medical text-5xl gradient-text"></i>
-                  </div>
-                  <div class="p-4">
-                    <h3 class="font-bold text-lg mb-2">\${track.title}</h3>
-                    <p class="text-gray-400 text-sm mb-3 line-clamp-2">\${track.description || ''}</p>
-                    <div class="flex items-center justify-between text-sm">
-                      <span class="text-gray-400">
-                        <i class="fas fa-video mr-1"></i> \${track.total_lessons} aulas
-                      </span>
-                      <span class="text-purple-400 font-semibold">
-                        \${track.user_progress ? Math.round(track.user_progress) + '%' : 'Iniciar'}
-                      </span>
-                    </div>
-                    \${track.user_progress ? \`
-                      <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-                        <div class="bg-purple-500 h-full rounded-full" style="width: \${track.user_progress}%"></div>
-                      </div>
-                    \` : ''}
-                  </div>
-                </a>
-              \`).join('');
-            } else {
-              myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha encontrada</div>';
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            if (error.response?.status === 401) window.location.href = '/login';
+        // Wait for axios to be configured before loading dashboard
+        function waitForAxiosAndLoad() {
+          if (window.axiosConfigured) {
+            console.log('✅ Axios ready, loading dashboard...');
+            loadDashboard();
+          } else {
+            console.log('⏳ Waiting for axios configuration...');
+            setTimeout(waitForAxiosAndLoad, 50);
           }
         }
-        loadDashboard();
+        waitForAxiosAndLoad();
       `}</script>
     </BaseLayout>
   );
@@ -1069,45 +1023,19 @@ app.get('/admin', async (c) => {
       
       {Footer()}
       
-      <script src="/static/dashboard.js"></script>
+      <script src="/static/admin.js"></script>
       <script>{`
-        async function loadAdminStats() {
-          try {
-            const statsResponse = await axios.get('/admin/stats');
-            const stats = statsResponse.data;
-            
-            document.getElementById('totalUsers').textContent = stats.total_users;
-            document.getElementById('totalTracks').textContent = stats.total_tracks;
-            document.getElementById('totalLessons').textContent = stats.total_lessons;
-            document.getElementById('dailyViews').textContent = stats.daily_views;
-            
-            const usersResponse = await axios.get('/admin/users');
-            const users = usersResponse.data;
-            
-            const recentUsersDiv = document.getElementById('recentUsers');
-            if (users.length > 0) {
-              recentUsersDiv.innerHTML = users.slice(0, 5).map(user => \`
-                <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                  <div>
-                    <p class="font-semibold">\${user.name}</p>
-                    <p class="text-sm text-gray-400">\${user.email}</p>
-                  </div>
-                  <span class="text-xs bg-\${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
-                    \${user.role}
-                  </span>
-                </div>
-              \`).join('');
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            if (error.response?.status === 403) {
-              alert('Acesso negado! Apenas administradores podem acessar esta página.');
-              window.location.href = '/dashboard';
-            }
+        // Wait for axios to be configured before loading admin stats
+        function waitForAxiosAndLoadAdmin() {
+          if (window.axiosConfigured) {
+            console.log('✅ Axios ready, loading admin stats...');
+            loadAdminStats();
+          } else {
+            console.log('⏳ Waiting for axios configuration...');
+            setTimeout(waitForAxiosAndLoadAdmin, 50);
           }
         }
-        
-        loadAdminStats();
+        waitForAxiosAndLoadAdmin();
       `}</script>
     </BaseLayout>
   );
@@ -1162,47 +1090,19 @@ app.get('/admin/usuarios', async (c) => {
       
       {Footer()}
       
-      <script src="/static/dashboard.js"></script>
+      <script src="/static/admin-users.js"></script>
       <script>{`
-        async function loadUsers() {
-          try {
-            const response = await axios.get('/admin/users');
-            const users = response.data;
-            
-            const tbody = document.getElementById('usersTable');
-            tbody.innerHTML = users.map(user => \`
-              <tr class="border-b border-gray-700 hover:bg-gray-750">
-                <td class="py-3 px-4">\${user.name}</td>
-                <td class="py-3 px-4">\${user.email}</td>
-                <td class="py-3 px-4">
-                  <span class="text-xs bg-\${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
-                    \${user.role}
-                  </span>
-                </td>
-                <td class="py-3 px-4">\${Math.round(user.avg_progress || 0)}%</td>
-                <td class="py-3 px-4 text-sm text-gray-400">
-                  \${user.last_access ? new Date(user.last_access).toLocaleDateString('pt-BR') : 'Nunca'}
-                </td>
-                <td class="py-3 px-4">
-                  <button class="text-blue-400 hover:text-blue-300 mr-2" title="Editar">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="text-red-400 hover:text-red-300" title="Desativar">
-                    <i class="fas fa-ban"></i>
-                  </button>
-                </td>
-              </tr>
-            \`).join('');
-          } catch (error) {
-            console.error('Error:', error);
-            if (error.response?.status === 403) {
-              alert('Acesso negado!');
-              window.location.href = '/dashboard';
-            }
+        // Wait for axios to be configured before loading users
+        function waitForAxiosAndLoadUsers() {
+          if (window.axiosConfigured) {
+            console.log('✅ Axios ready, loading users...');
+            loadUsers();
+          } else {
+            console.log('⏳ Waiting for axios configuration...');
+            setTimeout(waitForAxiosAndLoadUsers, 50);
           }
         }
-        
-        loadUsers();
+        waitForAxiosAndLoadUsers();
       `}</script>
     </BaseLayout>
   );
@@ -1285,79 +1185,19 @@ app.get('/admin/trilhas', async (c) => {
         </div>
       </div>
       
-      <script src="/static/dashboard.js"></script>
+      <script src="/static/admin-tracks.js"></script>
       <script>{`
-        async function loadTracks() {
-          try {
-            const response = await axios.get('/api/tracks');
-            const tracks = response.data;
-            
-            const table = document.getElementById('tracksTable');
-            table.innerHTML = \`
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead class="border-b border-gray-700">
-                    <tr>
-                      <th class="text-left py-3 px-4">ID</th>
-                      <th class="text-left py-3 px-4">Título</th>
-                      <th class="text-left py-3 px-4">Aulas</th>
-                      <th class="text-left py-3 px-4">Duração</th>
-                      <th class="text-left py-3 px-4">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    \${tracks.map(track => \`
-                      <tr class="border-b border-gray-700 hover:bg-gray-750">
-                        <td class="py-3 px-4">#\${track.id}</td>
-                        <td class="py-3 px-4 font-semibold">\${track.title}</td>
-                        <td class="py-3 px-4">\${track.total_lessons || 0} aulas</td>
-                        <td class="py-3 px-4">\${Math.round((track.duration_minutes || 0) / 60)}h</td>
-                        <td class="py-3 px-4">
-                          <button onclick="editTrack(\${track.id})" class="text-blue-400 hover:text-blue-300 mr-3">
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button onclick="deleteTrack(\${track.id})" class="text-red-400 hover:text-red-300">
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    \`).join('')}
-                  </tbody>
-                </table>
-              </div>
-            \`;
-          } catch (error) {
-            console.error('Error loading tracks:', error);
-            document.getElementById('tracksTable').innerHTML = '<p class="text-center text-red-400 py-12">Erro ao carregar trilhas</p>';
+        // Wait for axios to be configured before loading tracks
+        function waitForAxiosAndLoadTracks() {
+          if (window.axiosConfigured) {
+            console.log('✅ Axios ready, loading admin tracks...');
+            loadTracks();
+          } else {
+            console.log('⏳ Waiting for axios configuration...');
+            setTimeout(waitForAxiosAndLoadTracks, 50);
           }
         }
-        
-        function openCreateModal() {
-          document.getElementById('modalTitle').textContent = 'Nova Trilha';
-          document.getElementById('trackForm').reset();
-          document.getElementById('trackId').value = '';
-          document.getElementById('modalOverlay').classList.remove('hidden');
-        }
-        
-        function closeModal() {
-          document.getElementById('modalOverlay').classList.add('hidden');
-        }
-        
-        async function editTrack(id) {
-          alert('Função de edição será implementada em breve!');
-        }
-        
-        async function deleteTrack(id) {
-          if (!confirm('Tem certeza que deseja excluir esta trilha?')) return;
-          alert('Função de exclusão será implementada em breve!');
-        }
-        
-        document.getElementById('trackForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          alert('Função de salvar será implementada em breve!');
-        });
-        
-        loadTracks();
+        waitForAxiosAndLoadTracks();
       `}</script>
     </BaseLayout>
   );
