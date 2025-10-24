@@ -366,6 +366,40 @@ app.get('/dashboard', async (c) => {
   );
 });
 
+// ========================================
+// PAGE: ALL TRACKS (STUDENT VIEW)
+// ========================================
+app.get('/trilhas', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user) {
+    return c.redirect('/login');
+  }
+  
+  return c.html(
+    <BaseLayout title="Todas as Trilhas">
+      {Header({ user, showSearch: true })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+          <h1 class="text-4xl font-bold mb-2">Todas as Trilhas</h1>
+          <p class="text-gray-400">Explore nosso catálogo completo de trilhas organizadas por especialidade</p>
+        </div>
+        
+        <div id="specialtiesContent">
+          <div class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-4"></i>
+            <p class="text-gray-400">Carregando trilhas...</p>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/tracks.js"></script>
+    </BaseLayout>
+  );
+});
+
 app.get('/trilha/:slug', async (c) => {
   const slug = c.req.param('slug');
   const user = await getUserFromToken(c);
