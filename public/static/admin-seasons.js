@@ -26,7 +26,7 @@ async function loadInitialData() {
     
   } catch (error) {
     console.error('Error loading initial data:', error);
-    alert('Erro ao carregar dados iniciais');
+    showAlert('Erro ao carregar dados iniciais', 'Erro', 'error');
   }
 }
 
@@ -84,7 +84,7 @@ async function loadSeasons() {
     
   } catch (error) {
     console.error('Error loading seasons:', error);
-    alert('Erro ao carregar temporadas');
+    showAlert('Erro ao carregar temporadas', 'Erro', 'error');
   }
 }
 
@@ -120,17 +120,21 @@ async function editSeason(id) {
 }
 
 async function deleteSeason(id, title) {
-  if (!confirm(`Tem certeza que deseja excluir a temporada "${title}"?\n\nATENÇÃO: Todas as aulas associadas a esta temporada também serão excluídas!`)) {
-    return;
-  }
+  const confirmed = await showConfirm(
+    `Tem certeza que deseja excluir a temporada "${title}"?\n\nATENÇÃO: Todas as aulas associadas a esta temporada também serão excluídas!`,
+    'Confirmar Exclusão',
+    { confirmText: 'Excluir', cancelText: 'Cancelar', dangerous: true }
+  );
+  
+  if (!confirmed) return;
   
   try {
     await api.delete('/seasons/' + id);
-    alert('Temporada excluída com sucesso!');
+    showAlert('Temporada excluída com sucesso!', 'Sucesso', 'success');
     loadSeasons();
   } catch (error) {
     console.error('Error deleting season:', error);
-    alert('Erro ao excluir temporada');
+    showAlert('Erro ao excluir temporada', 'Erro', 'error');
   }
 }
 
@@ -149,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const is_active = document.getElementById('seasonActive').checked ? 1 : 0;
       
       if (!track_id) {
-        alert('Por favor, selecione uma trilha');
+        showAlert('Por favor, selecione uma trilha', 'Aviso', 'warning');
         return;
       }
       

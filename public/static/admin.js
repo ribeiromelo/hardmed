@@ -42,7 +42,7 @@ async function loadAdminStats() {
     console.error('❌ Error loading admin stats:', error);
     
     if (error.status === 403) {
-      alert('Acesso negado! Apenas administradores podem acessar esta página.');
+      showAlert('Acesso negado! Apenas administradores podem acessar esta página.', 'Acesso Negado', 'error');
       window.location.href = '/dashboard';
     }
   }

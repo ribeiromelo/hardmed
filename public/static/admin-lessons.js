@@ -166,7 +166,7 @@ async function editLesson(id) {
     
     const lesson = allLessons.find(l => l.id === id);
     if (!lesson) {
-      alert('Aula não encontrada');
+      showAlert('Aula não encontrada', 'Erro', 'error');
       return;
     }
     
@@ -194,14 +194,18 @@ async function editLesson(id) {
     
   } catch (error) {
     console.error('Error loading lesson for edit:', error);
-    alert('Erro ao carregar dados da aula');
+    showAlert('Erro ao carregar dados da aula', 'Erro', 'error');
   }
 }
 
 async function deleteLesson(id, title) {
-  if (!confirm(`Tem certeza que deseja excluir a aula "${title}"?\n\nEsta ação não pode ser desfeita.`)) {
-    return;
-  }
+  const confirmed = await showConfirm(
+    `Tem certeza que deseja excluir a aula "${title}"?\n\nEsta ação não pode ser desfeita.`,
+    'Confirmar Exclusão',
+    { confirmText: 'Excluir', cancelText: 'Cancelar', dangerous: true }
+  );
+  
+  if (!confirmed) return;
   
   try {
     console.log('🗑️ Deleting lesson:', id);
@@ -209,14 +213,14 @@ async function deleteLesson(id, title) {
     await api.delete('/lessons/' + id);
     
     console.log('✅ Lesson deleted successfully');
-    alert('Aula deletada com sucesso!');
+    showAlert('Aula deletada com sucesso!', 'Sucesso', 'success');
     
     // Reload lessons list
     await loadLessons();
     
   } catch (error) {
     console.error('Error deleting lesson:', error);
-    alert('Erro ao deletar aula. Verifique o console.');
+    showAlert('Erro ao deletar aula. Verifique o console.', 'Erro', 'error');
   }
 }
 

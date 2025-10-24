@@ -48,7 +48,7 @@ async function loadUsers() {
     console.error('❌ Error loading users:', error);
     
     if (error.status === 403) {
-      alert('Acesso negado!');
+      showAlert('Acesso negado!', 'Erro', 'error');
       window.location.href = '/dashboard';
     }
   }

@@ -74,6 +74,7 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
     <!-- Native Fetch API helper (NO AXIOS DEPENDENCY) -->
     <script src="/static/api.js"></script>
     <script src="/static/auth.js"></script>
+    <script src="/static/modal-utils.js"></script>
 </body>
 </html>
 `;

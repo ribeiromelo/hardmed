@@ -93,7 +93,7 @@ async function editTrack(id) {
     const track = tracks.find(t => t.id === id);
     
     if (!track) {
-      alert('Trilha não encontrada');
+      showAlert('Trilha não encontrada', 'Erro', 'error');
       return;
     }
     
@@ -115,14 +115,18 @@ async function editTrack(id) {
     
   } catch (error) {
     console.error('Error loading track for edit:', error);
-    alert('Erro ao carregar dados da trilha');
+    showAlert('Erro ao carregar dados da trilha', 'Erro', 'error');
   }
 }
 
 async function deleteTrack(id, title) {
-  if (!confirm(`Tem certeza que deseja excluir a trilha "${title}"?\n\nEsta ação não pode ser desfeita e todas as aulas associadas também serão excluídas.`)) {
-    return;
-  }
+  const confirmed = await showConfirm(
+    `Tem certeza que deseja excluir a trilha "${title}"?\n\nEsta ação não pode ser desfeita e todas as aulas associadas também serão excluídas.`,
+    'Confirmar Exclusão',
+    { confirmText: 'Excluir', cancelText: 'Cancelar', dangerous: true }
+  );
+  
+  if (!confirmed) return;
   
   try {
     console.log('🗑️ Deleting track:', id);
@@ -130,14 +134,14 @@ async function deleteTrack(id, title) {
     await api.delete('/tracks/' + id);
     
     console.log('✅ Track deleted successfully');
-    alert('Trilha deletada com sucesso!');
+    showAlert('Trilha deletada com sucesso!', 'Sucesso', 'success');
     
     // Reload tracks list
     loadTracks();
     
   } catch (error) {
     console.error('Error deleting track:', error);
-    alert('Erro ao deletar trilha. Verifique o console.');
+    showAlert('Erro ao deletar trilha. Verifique o console.', 'Erro', 'error');
   }
 }
 

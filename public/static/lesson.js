@@ -88,7 +88,7 @@ async function loadLesson(slug) {
     
   } catch (error) {
     console.error('❌ Error loading lesson:', error);
-    alert('Erro ao carregar aula. Verifique o console.');
+    showAlert('Erro ao carregar aula. Verifique o console para mais detalhes.', 'Erro', 'error');
   }
 }
 
@@ -136,7 +136,7 @@ window.toggleComplete = async function() {
     
   } catch (error) {
     console.error('❌ Error toggling completion:', error);
-    alert('Erro ao atualizar progresso. Tente novamente.');
+    showAlert('Erro ao atualizar progresso. Tente novamente.', 'Erro', 'error');
     btn.innerHTML = originalHtml;
   } finally {
     btn.disabled = false;
