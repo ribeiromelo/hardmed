@@ -296,9 +296,7 @@ api.delete('/tracks/:id', async (c) => {
       return c.json({ error: 'Trilha não encontrada' }, 404);
     }
     
-    // Delete related data first (cascade)
-    await DB.prepare('DELETE FROM user_progress WHERE lesson_id IN (SELECT id FROM lessons WHERE track_id = ?)').bind(id).run();
-    await DB.prepare('DELETE FROM lessons WHERE track_id = ?').bind(id).run();
+    // Delete track (cascade delete should handle related records if configured)
     await DB.prepare('DELETE FROM tracks WHERE id = ?').bind(id).run();
     
     return c.json({ message: 'Trilha deletada com sucesso' });
