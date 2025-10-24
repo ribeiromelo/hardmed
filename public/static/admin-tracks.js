@@ -1,5 +1,10 @@
 // Admin tracks management - Using native Fetch API
 
+// Wait for page load
+window.addEventListener('DOMContentLoaded', () => {
+  loadTracks();
+});
+
 async function loadTracks() {
   console.log('📊 Loading admin tracks...');
   

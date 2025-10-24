@@ -1,5 +1,10 @@
 // Admin users management - Using native Fetch API
 
+// Auto-load on page ready
+window.addEventListener('DOMContentLoaded', () => {
+  loadUsers();
+});
+
 async function loadUsers() {
   console.log('👥 Loading users...');
   

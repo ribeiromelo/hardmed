@@ -1,5 +1,10 @@
 // Admin dashboard - Using native Fetch API
 
+// Auto-load on page ready
+window.addEventListener('DOMContentLoaded', () => {
+  loadAdminStats();
+});
+
 async function loadAdminStats() {
   console.log('📊 Loading admin stats...');
   

@@ -362,10 +362,6 @@ app.get('/dashboard', async (c) => {
       {Footer()}
       
       <script src="/static/dashboard.js"></script>
-      <script>{`
-        // Load dashboard immediately (using native Fetch API)
-        loadDashboard();
-      `}</script>
     </BaseLayout>
   );
 });
@@ -1015,10 +1011,6 @@ app.get('/admin', async (c) => {
       {Footer()}
       
       <script src="/static/admin.js"></script>
-      <script>{`
-        // Load admin stats immediately
-        loadAdminStats();
-      `}</script>
     </BaseLayout>
   );
 });
@@ -1073,10 +1065,6 @@ app.get('/admin/usuarios', async (c) => {
       {Footer()}
       
       <script src="/static/admin-users.js"></script>
-      <script>{`
-        // Load users immediately
-        loadUsers();
-      `}</script>
     </BaseLayout>
   );
 });
@@ -1159,10 +1147,6 @@ app.get('/admin/trilhas', async (c) => {
       </div>
       
       <script src="/static/admin-tracks.js"></script>
-      <script>{`
-        // Load tracks immediately
-        loadTracks();
-      `}</script>
     </BaseLayout>
   );
 });

@@ -1,5 +1,12 @@
 // Dashboard functions - Using native Fetch API (NO AXIOS)
 
+// Auto-load on page ready
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof loadDashboard !== 'undefined') {
+    loadDashboard();
+  }
+});
+
 async function loadDashboard() {
   console.log('📊 Loading dashboard...');
   
