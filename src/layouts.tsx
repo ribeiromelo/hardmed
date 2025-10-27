@@ -66,6 +66,25 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        
+        /* Custom scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white">

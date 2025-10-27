@@ -84,11 +84,94 @@ async function loadLesson(slug) {
     // Update complete button state
     updateCompleteButton(lesson.is_completed);
     
+    // Load track sidebar
+    await loadTrackSidebar(lesson.track_id);
+    
     console.log('✅ Lesson loaded successfully!');
     
   } catch (error) {
     console.error('❌ Error loading lesson:', error);
     showAlert('Erro ao carregar aula. Verifique o console para mais detalhes.', 'Erro', 'error');
+  }
+}
+
+async function loadTrackSidebar(trackId) {
+  try {
+    console.log('📂 Loading track sidebar for track:', trackId);
+    
+    // Get all tracks to find the current one by ID
+    const tracks = await api.get('/tracks');
+    const track = tracks.find(t => t.track_id === trackId || t.id === trackId);
+    
+    if (!track) {
+      console.error('Track not found');
+      return;
+    }
+    
+    // Get track details with seasons and lessons
+    const trackData = await api.get('/tracks/' + track.slug);
+    
+    // Update track info
+    document.getElementById('trackTitle').textContent = trackData.track.title;
+    
+    const totalLessons = trackData.track.total_lessons || 0;
+    const completedLessons = trackData.track.completed_lessons || 0;
+    const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    
+    document.getElementById('trackProgress').textContent = `${completedLessons} de ${totalLessons} aulas • ${progressPercent}% concluído`;
+    
+    // Render seasons and lessons
+    const seasonsDiv = document.getElementById('trackSeasons');
+    seasonsDiv.innerHTML = trackData.seasons.map((season, index) => `
+      <div class="border-b border-gray-700 pb-3 last:border-0">
+        <button onclick="toggleSidebarSeason(${index})" class="w-full text-left flex items-center justify-between py-2 hover:text-purple-400 transition">
+          <div>
+            <div class="font-semibold text-sm">${season.title}</div>
+            <div class="text-xs text-gray-400">${season.lessons.length} aulas</div>
+          </div>
+          <i id="sidebar-chevron-${index}" class="fas fa-chevron-down text-xs transition-transform"></i>
+        </button>
+        <div id="sidebar-season-${index}" class="mt-2 space-y-1">
+          ${season.lessons.map(lessonItem => `
+            <a href="/aula/${lessonItem.slug}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-gray-700 transition ${lessonItem.id === currentLesson.id ? 'bg-purple-600/20 border-l-2 border-purple-500' : ''}">
+              <i class="fas fa-${lessonItem.is_completed ? 'check-circle text-green-500' : lessonItem.id === currentLesson.id ? 'play-circle text-purple-400' : 'circle text-gray-600'} text-xs flex-shrink-0"></i>
+              <span class="flex-1 truncate ${lessonItem.id === currentLesson.id ? 'text-purple-400 font-semibold' : ''}">${lessonItem.title}</span>
+              <span class="text-xs text-gray-500">${lessonItem.duration_minutes}min</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+    
+    // Auto-expand current season
+    trackData.seasons.forEach((season, index) => {
+      const hasCurrentLesson = season.lessons.some(l => l.id === currentLesson.id);
+      if (hasCurrentLesson) {
+        const seasonDiv = document.getElementById('sidebar-season-' + index);
+        const chevron = document.getElementById('sidebar-chevron-' + index);
+        if (seasonDiv) seasonDiv.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      } else {
+        // Collapse other seasons by default
+        const seasonDiv = document.getElementById('sidebar-season-' + index);
+        if (seasonDiv) seasonDiv.classList.add('hidden');
+      }
+    });
+    
+    console.log('✅ Track sidebar loaded');
+    
+  } catch (error) {
+    console.error('❌ Error loading track sidebar:', error);
+  }
+}
+
+window.toggleSidebarSeason = function(index) {
+  const seasonDiv = document.getElementById('sidebar-season-' + index);
+  const chevron = document.getElementById('sidebar-chevron-' + index);
+  
+  if (seasonDiv && chevron) {
+    seasonDiv.classList.toggle('hidden');
+    chevron.classList.toggle('rotate-180');
   }
 }
 
