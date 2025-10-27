@@ -132,21 +132,21 @@ window.toggleComplete = async function() {
       console.log('   Marked as complete');
     }
     
-    // Only update state if request succeeded
-    currentLesson.is_completed = !wasCompleted;
-    updateCompleteButton(currentLesson.is_completed);
-    
-    // Show success message
-    const message = currentLesson.is_completed 
-      ? 'Aula marcada como concluída!' 
-      : 'Aula marcada como não concluída';
+    // Show success message and reload page
+    const message = !wasCompleted 
+      ? 'Aula marcada como concluída! Atualizando...' 
+      : 'Aula marcada como não concluída! Atualizando...';
     showAlert(message, 'Sucesso', 'success');
+    
+    // Auto-refresh after 800ms to show the success message
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
     
   } catch (error) {
     console.error('❌ Error toggling completion:', error);
     showAlert('Erro ao atualizar progresso. Tente novamente.', 'Erro', 'error');
     btn.innerHTML = originalHtml;
-  } finally {
     btn.disabled = false;
   }
 }
