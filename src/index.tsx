@@ -152,12 +152,29 @@ app.get('/cadastro', (c) => {
               <label class="block text-sm font-medium mb-2">Senha</label>
               <input 
                 type="password" 
+                id="password"
                 name="password" 
                 required
                 minlength="8"
                 class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Mínimo 8 caracteres"
               />
+              
+              {/* Password Strength Indicator */}
+              <div class="mt-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs text-gray-400">Força da senha:</span>
+                  <span id="strengthLabel" class="text-xs font-semibold"></span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                  <div 
+                    id="strengthBar" 
+                    class="h-full rounded-full transition-all duration-300 ease-out"
+                    style="width: 0%; background-color: #6b7280;"
+                  ></div>
+                </div>
+                <ul id="strengthFeedback" class="mt-2 space-y-1 hidden"></ul>
+              </div>
             </div>
             
             <div>

@@ -1,5 +1,113 @@
+// Password strength checker
+function checkPasswordStrength(password) {
+  let strength = 0;
+  let feedback = [];
+  
+  if (password.length === 0) {
+    return { strength: 0, label: '', color: '', width: '0%' };
+  }
+  
+  // Length check
+  if (password.length >= 8) {
+    strength += 25;
+  } else {
+    feedback.push('Mínimo 8 caracteres');
+  }
+  
+  // Has lowercase
+  if (/[a-z]/.test(password)) {
+    strength += 15;
+  } else {
+    feedback.push('Adicione letras minúsculas');
+  }
+  
+  // Has uppercase
+  if (/[A-Z]/.test(password)) {
+    strength += 20;
+  } else {
+    feedback.push('Adicione letras maiúsculas');
+  }
+  
+  // Has numbers
+  if (/\d/.test(password)) {
+    strength += 20;
+  } else {
+    feedback.push('Adicione números');
+  }
+  
+  // Has special characters
+  if (/[^A-Za-z0-9]/.test(password)) {
+    strength += 20;
+  } else {
+    feedback.push('Adicione caracteres especiais');
+  }
+  
+  // Determine label and color
+  let label = '';
+  let color = '';
+  let width = '0%';
+  
+  if (strength <= 25) {
+    label = 'Muito Fraca';
+    color = '#ef4444'; // red
+    width = '25%';
+  } else if (strength <= 50) {
+    label = 'Fraca';
+    color = '#f97316'; // orange
+    width = '50%';
+  } else if (strength <= 75) {
+    label = 'Moderada';
+    color = '#eab308'; // yellow
+    width = '75%';
+  } else {
+    label = 'Forte';
+    color = '#22c55e'; // green
+    width = '100%';
+  }
+  
+  return { strength, label, color, width, feedback };
+}
+
+// Update password strength indicator
+function updatePasswordStrength() {
+  const passwordInput = document.getElementById('password');
+  const strengthBar = document.getElementById('strengthBar');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const strengthFeedback = document.getElementById('strengthFeedback');
+  
+  if (!passwordInput || !strengthBar || !strengthLabel) return;
+  
+  const password = passwordInput.value;
+  const result = checkPasswordStrength(password);
+  
+  // Update bar
+  strengthBar.style.width = result.width;
+  strengthBar.style.backgroundColor = result.color;
+  
+  // Update label
+  strengthLabel.textContent = result.label;
+  strengthLabel.style.color = result.color;
+  
+  // Update feedback
+  if (strengthFeedback && result.feedback.length > 0) {
+    strengthFeedback.innerHTML = result.feedback.map(f => 
+      `<li class="text-xs text-gray-400"><i class="fas fa-circle text-[6px] mr-2"></i>${f}</li>`
+    ).join('');
+    strengthFeedback.classList.remove('hidden');
+  } else if (strengthFeedback) {
+    strengthFeedback.classList.add('hidden');
+  }
+}
+
 // Wait for DOM and axios to be loaded
 document.addEventListener('DOMContentLoaded', function() {
+  // Setup password strength indicator on register page
+  const passwordInput = document.getElementById('password');
+  if (passwordInput) {
+    passwordInput.addEventListener('input', updatePasswordStrength);
+    passwordInput.addEventListener('keyup', updatePasswordStrength);
+  }
+  
   // Check if we're on the register page
   const registerForm = document.getElementById('registerForm');
   if (registerForm) {
