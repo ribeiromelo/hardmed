@@ -337,7 +337,7 @@ app.get('/dashboard', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Dashboard">
+    <BaseLayout title="Dashboard" user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -393,7 +393,7 @@ app.get('/trilhas', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Todas as Trilhas">
+    <BaseLayout title="Todas as Trilhas" user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -425,7 +425,7 @@ app.get('/trilha/:slug', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Trilha">
+    <BaseLayout title="Trilha" user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -459,7 +459,7 @@ app.get('/aula/:slug', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Aula">
+    <BaseLayout title="Aula" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
@@ -531,7 +531,7 @@ app.get('/trilhas/:specialtySlug', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title={`Trilhas de ${specialty.name}`}>
+    <BaseLayout title={`Trilhas de ${specialty.name}`} user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -614,7 +614,7 @@ app.get('/trilhas', async (c) => {
   const user = await getUserFromToken(c);
   
   return c.html(
-    <BaseLayout title="Todas as Trilhas">
+    <BaseLayout title="Todas as Trilhas" user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -739,7 +739,7 @@ app.get('/perfil', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Meu Perfil">
+    <BaseLayout title="Meu Perfil" user={user}>
       {Header({ user, showSearch: true })}
       
       <main class="container mx-auto px-4 py-8">
@@ -919,7 +919,7 @@ app.get('/admin', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Painel Admin">
+    <BaseLayout title="Painel Admin" user={user}>
       {Header({ user, showSearch: false })}
       
       <main class="container mx-auto px-4 py-8">
@@ -1021,7 +1021,7 @@ app.get('/admin/usuarios', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Gerenciar Usuários">
+    <BaseLayout title="Gerenciar Usuários" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
@@ -1075,7 +1075,7 @@ app.get('/admin/trilhas', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Gerenciar Trilhas">
+    <BaseLayout title="Gerenciar Trilhas" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
@@ -1170,7 +1170,7 @@ app.get('/admin/temporadas', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Gerenciar Temporadas">
+    <BaseLayout title="Gerenciar Temporadas" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
@@ -1280,7 +1280,7 @@ app.get('/admin/aulas', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Gerenciar Aulas">
+    <BaseLayout title="Gerenciar Aulas" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
@@ -1436,7 +1436,7 @@ app.get('/admin/notificacoes', async (c) => {
   }
   
   return c.html(
-    <BaseLayout title="Gerenciar Notificações">
+    <BaseLayout title="Gerenciar Notificações" user={user}>
       {Header({ user })}
       
       <main class="container mx-auto px-4 py-8">
