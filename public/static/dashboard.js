@@ -20,7 +20,8 @@ async function loadDashboard() {
     }
     
     console.log('🎯 Fetching tracks...');
-    const tracks = await api.get('/tracks');
+    const tracksResponse = await api.get('/tracks');
+    const tracks = Array.isArray(tracksResponse) ? tracksResponse : [];
     console.log('   Tracks received:', tracks.length, 'tracks');
     
     // Calculate total progress considering ALL lessons from ALL tracks
