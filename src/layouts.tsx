@@ -94,6 +94,7 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
     <script src="/static/api.js"></script>
     <script src="/static/auth.js"></script>
     <script src="/static/modal-utils.js"></script>
+    ${user ? html`<script src="/static/notifications.js"></script>` : ''}
 </body>
 </html>
 `;
@@ -146,10 +147,27 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
             
             <div class="flex items-center space-x-4">
                 ${user ? html`
-                    <button class="relative hover:text-purple-400 transition">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
-                    </button>
+                    <div class="relative">
+                        <button id="notificationsButton" onclick="toggleNotifications()" class="relative hover:text-purple-400 transition">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                        </button>
+                        
+                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-96 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 max-h-[500px] flex flex-col">
+                            <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+                                <h3 class="font-bold">Notificações</h3>
+                                <button onclick="markAllAsRead()" class="text-xs text-purple-400 hover:text-purple-300">
+                                    Marcar todas como lidas
+                                </button>
+                            </div>
+                            <div id="notificationsList" class="overflow-y-auto flex-1 custom-scrollbar">
+                                <div class="text-center py-8 text-gray-400">
+                                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                    <p>Carregando...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="relative group">
                         <button class="flex items-center space-x-2 hover:text-purple-400 transition">

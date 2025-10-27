@@ -167,3 +167,20 @@ export interface TrackViewStats {
   track_title: string;
   total_views: number;
 }
+
+// Notification types
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  icon?: string;
+  link_url?: string;
+  is_active: number;
+  created_at: string;
+  expires_at?: string;
+}
+
+export interface NotificationWithReadStatus extends Notification {
+  is_read: boolean;
+}

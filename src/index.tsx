@@ -988,6 +988,10 @@ app.get('/admin', async (c) => {
                 <i class="fas fa-chart-bar text-3xl mb-2"></i>
                 <p class="font-semibold">Relatórios</p>
               </a>
+              <a href="/admin/notificacoes" class="bg-yellow-600 hover:bg-yellow-700 p-4 rounded-lg text-center transition">
+                <i class="fas fa-bell text-3xl mb-2"></i>
+                <p class="font-semibold">Notificações</p>
+              </a>
             </div>
           </div>
           

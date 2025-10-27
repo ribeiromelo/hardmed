@@ -771,4 +771,171 @@ api.get('/admin/users', async (c) => {
   }
 });
 
+// ========================================
+// NOTIFICATIONS API ROUTES
+// ========================================
+
+// Get user notifications (with read status)
+api.get('/notifications', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    
+    const notifications = await DB.prepare(`
+      SELECT 
+        n.*,
+        CASE WHEN unr.id IS NOT NULL THEN 1 ELSE 0 END as is_read
+      FROM notifications n
+      LEFT JOIN user_notification_reads unr ON n.id = unr.notification_id AND unr.user_id = ?
+      WHERE n.is_active = 1 
+        AND (n.expires_at IS NULL OR n.expires_at > datetime('now'))
+      ORDER BY n.created_at DESC
+      LIMIT 50
+    `).bind(userId).all();
+    
+    return c.json(notifications.results || []);
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    return c.json({ error: 'Erro ao buscar notificações' }, 500);
+  }
+});
+
+// Mark notification as read
+api.post('/notifications/:id/read', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    const notificationId = c.req.param('id');
+    
+    await DB.prepare(`
+      INSERT OR IGNORE INTO user_notification_reads (user_id, notification_id)
+      VALUES (?, ?)
+    `).bind(userId, notificationId).run();
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Mark notification read error:', error);
+    return c.json({ error: 'Erro ao marcar notificação como lida' }, 500);
+  }
+});
+
+// Mark all notifications as read
+api.post('/notifications/read-all', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    
+    // Get all active notification IDs
+    const notifications = await DB.prepare(`
+      SELECT id FROM notifications 
+      WHERE is_active = 1 
+        AND (expires_at IS NULL OR expires_at > datetime('now'))
+    `).all();
+    
+    // Insert read records for all
+    for (const notif of notifications.results || []) {
+      await DB.prepare(`
+        INSERT OR IGNORE INTO user_notification_reads (user_id, notification_id)
+        VALUES (?, ?)
+      `).bind(userId, notif.id).run();
+    }
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Mark all notifications read error:', error);
+    return c.json({ error: 'Erro ao marcar todas notificações como lidas' }, 500);
+  }
+});
+
+// ========================================
+// ADMIN NOTIFICATIONS ROUTES
+// ========================================
+
+// Get all notifications (admin)
+api.get('/admin/notifications', async (c) => {
+  try {
+    const { DB } = c.env;
+    
+    const notifications = await DB.prepare(`
+      SELECT * FROM notifications ORDER BY created_at DESC
+    `).all();
+    
+    return c.json(notifications.results || []);
+  } catch (error) {
+    console.error('Get admin notifications error:', error);
+    return c.json({ error: 'Erro ao buscar notificações' }, 500);
+  }
+});
+
+// Create notification (admin)
+api.post('/admin/notifications', async (c) => {
+  try {
+    const { DB } = c.env;
+    const body = await c.req.json();
+    const { title, message, type, icon, link_url, expires_at } = body;
+    
+    if (!title || !message) {
+      return c.json({ error: 'Título e mensagem são obrigatórios' }, 400);
+    }
+    
+    const result = await DB.prepare(`
+      INSERT INTO notifications (title, message, type, icon, link_url, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(title, message, type || 'info', icon, link_url, expires_at).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      title,
+      message,
+      type: type || 'info',
+      icon,
+      link_url,
+      expires_at
+    }, 201);
+  } catch (error) {
+    console.error('Create notification error:', error);
+    return c.json({ error: 'Erro ao criar notificação' }, 500);
+  }
+});
+
+// Update notification (admin)
+api.put('/admin/notifications/:id', async (c) => {
+  try {
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const { title, message, type, icon, link_url, is_active, expires_at } = body;
+    
+    if (!title || !message) {
+      return c.json({ error: 'Título e mensagem são obrigatórios' }, 400);
+    }
+    
+    await DB.prepare(`
+      UPDATE notifications 
+      SET title = ?, message = ?, type = ?, icon = ?, link_url = ?, is_active = ?, expires_at = ?
+      WHERE id = ?
+    `).bind(title, message, type, icon, link_url, is_active !== undefined ? is_active : 1, expires_at, id).run();
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Update notification error:', error);
+    return c.json({ error: 'Erro ao atualizar notificação' }, 500);
+  }
+});
+
+// Delete notification (admin)
+api.delete('/admin/notifications/:id', async (c) => {
+  try {
+    const { DB } = c.env;
+    const id = c.req.param('id');
+    
+    await DB.prepare('DELETE FROM notifications WHERE id = ?').bind(id).run();
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    return c.json({ error: 'Erro ao deletar notificação' }, 500);
+  }
+});
+
 export default api;
