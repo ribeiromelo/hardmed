@@ -94,12 +94,27 @@ api.use('/*', async (c, next) => {
     return next();
   }
   
+  // Try to get token from Authorization header or cookie
+  let token = null;
+  
   const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  } else {
+    // Try to get from cookie
+    const cookieHeader = c.req.header('Cookie');
+    if (cookieHeader) {
+      const match = cookieHeader.match(/auth_token=([^;]+)/);
+      if (match) {
+        token = match[1];
+      }
+    }
+  }
+  
+  if (!token) {
     return c.json({ error: 'Token não fornecido' }, 401);
   }
   
-  const token = authHeader.substring(7);
   const payload = await auth.verifyToken(token);
   
   if (!payload) {
@@ -872,25 +887,34 @@ api.post('/admin/notifications', async (c) => {
   try {
     const { DB } = c.env;
     const body = await c.req.json();
-    const { title, message, type, icon, link_url, expires_at } = body;
+    const { title, message, type, icon, link_url, is_active, expires_at } = body;
     
     if (!title || !message) {
       return c.json({ error: 'Título e mensagem são obrigatórios' }, 400);
     }
     
     const result = await DB.prepare(`
-      INSERT INTO notifications (title, message, type, icon, link_url, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(title, message, type || 'info', icon, link_url, expires_at).run();
+      INSERT INTO notifications (title, message, type, icon, link_url, is_active, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      title, 
+      message, 
+      type || 'info', 
+      icon || null, 
+      link_url || null, 
+      is_active !== undefined ? is_active : 1,
+      expires_at || null
+    ).run();
     
     return c.json({ 
       id: result.meta.last_row_id,
       title,
       message,
       type: type || 'info',
-      icon,
-      link_url,
-      expires_at
+      icon: icon || null,
+      link_url: link_url || null,
+      is_active: is_active !== undefined ? is_active : 1,
+      expires_at: expires_at || null
     }, 201);
   } catch (error) {
     console.error('Create notification error:', error);
@@ -914,7 +938,16 @@ api.put('/admin/notifications/:id', async (c) => {
       UPDATE notifications 
       SET title = ?, message = ?, type = ?, icon = ?, link_url = ?, is_active = ?, expires_at = ?
       WHERE id = ?
-    `).bind(title, message, type, icon, link_url, is_active !== undefined ? is_active : 1, expires_at, id).run();
+    `).bind(
+      title, 
+      message, 
+      type || 'info', 
+      icon || null, 
+      link_url || null, 
+      is_active !== undefined ? is_active : 1, 
+      expires_at || null, 
+      id
+    ).run();
     
     return c.json({ success: true });
   } catch (error) {

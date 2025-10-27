@@ -1427,6 +1427,119 @@ if(cookie){showResult('ℹ️ Token existente: '+cookie[1].substring(0,30)+'...'
 });
 
 // ========================================
+// ADMIN - GERENCIAR NOTIFICAÇÕES
+// ========================================
+app.get('/admin/notificacoes', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
+  return c.html(
+    <BaseLayout title="Gerenciar Notificações">
+      {Header({ user })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold">Gerenciar Notificações</h1>
+          <div class="flex gap-4">
+            <a href="/admin" class="text-purple-400 hover:text-purple-300">
+              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            </a>
+            <button onclick="openCreateModal()" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+              <i class="fas fa-plus mr-2"></i>Nova Notificação
+            </button>
+          </div>
+        </div>
+        
+        <div id="notificationsTable" class="bg-gray-800 rounded-xl p-6">
+          <div class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-3xl text-purple-500 mb-4"></i>
+            <p class="text-gray-400">Carregando notificações...</p>
+          </div>
+        </div>
+      </main>
+      
+      {/* Modal de Criar/Editar */}
+      <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-gray-700 flex items-center justify-between sticky top-0 bg-gray-800 z-10">
+            <h2 id="modalTitle" class="text-2xl font-bold">Nova Notificação</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          
+          <form id="notificationForm" class="p-6">
+            <input type="hidden" id="notificationId" />
+            
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Título *</label>
+                <input type="text" id="title" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: Nova trilha disponível" />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-2">Mensagem *</label>
+                <textarea id="message" required rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Descreva a notificação..."></textarea>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Tipo *</label>
+                  <select id="type" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="info">Info (Azul)</option>
+                    <option value="success">Sucesso (Verde)</option>
+                    <option value="warning">Aviso (Amarelo)</option>
+                    <option value="error">Erro (Vermelho)</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Ícone (Font Awesome)</label>
+                  <input type="text" id="icon" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: fa-rocket" />
+                  <p class="text-xs text-gray-400 mt-1">Opcional. Ex: fa-bell, fa-rocket</p>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-2">Link (URL)</label>
+                <input type="text" id="link_url" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Ex: /trilhas/cardiologia" />
+                <p class="text-xs text-gray-400 mt-1">Opcional. Para onde a notificação deve redirecionar</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-2">Data de Expiração</label>
+                <input type="datetime-local" id="expires_at" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <p class="text-xs text-gray-400 mt-1">Opcional. Deixe vazio para nunca expirar</p>
+              </div>
+              
+              <div class="flex items-center gap-3 p-4 bg-gray-700 rounded-lg">
+                <input type="checkbox" id="is_active" checked class="w-5 h-5 text-purple-600 bg-gray-600 border-gray-500 rounded focus:ring-purple-500" />
+                <label for="is_active" class="text-sm font-medium">Notificação ativa (visível para usuários)</label>
+              </div>
+            </div>
+            
+            <div class="flex gap-4 mt-6">
+              <button type="button" onclick="closeModal()" class="flex-1 bg-gray-700 py-3 rounded-lg hover:bg-gray-600 transition">
+                Cancelar
+              </button>
+              <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      {Footer()}
+      
+      <script src="/static/admin-notifications.js"></script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
 // PÁGINAS ESTÁTICAS PLACEHOLDER
 // ========================================
 app.get('/termos', (c) => c.html(<BaseLayout title="Termos de Uso">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Termos de Uso</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
