@@ -809,8 +809,6 @@ app.get('/perfil', async (c) => {
                   </div>
                 </div>
                 
-                <div id="message" class="hidden p-4 rounded-lg"></div>
-                
                 <button 
                   type="submit" 
                   class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
@@ -865,46 +863,7 @@ app.get('/perfil', async (c) => {
       
       {Footer()}
       
-      <script src="/static/dashboard.js"></script>
-      <script>{`
-        async function loadProfile() {
-          try {
-            const userResponse = await axios.get('/user/me');
-            const user = userResponse.data;
-            
-            document.getElementById('name').value = user.name;
-            document.getElementById('email').value = user.email;
-            document.getElementById('memberSince').textContent = new Date(user.created_at).toLocaleDateString('pt-BR');
-            
-            const progressResponse = await axios.get('/user/progress');
-            const progress = progressResponse.data;
-            
-            if (progress.length > 0) {
-              const totalCompleted = progress.reduce((sum, p) => sum + p.completed_lessons, 0);
-              const avgProgress = progress.reduce((sum, p) => sum + p.progress_percentage, 0) / progress.length;
-              
-              document.getElementById('totalCompleted').textContent = totalCompleted;
-              document.getElementById('totalTracks').textContent = progress.length;
-              document.getElementById('avgProgress').textContent = Math.round(avgProgress) + '%';
-            }
-          } catch (error) {
-            console.error('Error:', error);
-          }
-        }
-        
-        document.getElementById('profileForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const messageDiv = document.getElementById('message');
-          messageDiv.classList.add('hidden');
-          
-          messageDiv.textContent = 'Funcionalidade de edição será implementada em breve!';
-          messageDiv.classList.remove('hidden', 'bg-red-500/20', 'border-red-500', 'text-red-300');
-          messageDiv.classList.add('bg-blue-500/20', 'border', 'border-blue-500', 'text-blue-300');
-        });
-        
-        loadProfile();
-      `}</script>
+      <script src="/static/profile.js"></script>
     </BaseLayout>
   );
 });

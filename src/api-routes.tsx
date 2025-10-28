@@ -162,6 +162,108 @@ api.get('/user/progress', async (c) => {
   }
 });
 
+// Update user profile (name only, email is read-only)
+api.put('/user/profile', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    const { name } = await c.req.json();
+    
+    if (!name || name.trim().length < 3) {
+      return c.json({ error: 'Nome deve ter pelo menos 3 caracteres' }, 400);
+    }
+    
+    await DB.prepare('UPDATE users SET name = ? WHERE id = ?')
+      .bind(name.trim(), userId)
+      .run();
+    
+    return c.json({ success: true, message: 'Perfil atualizado com sucesso!' });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return c.json({ error: 'Erro ao atualizar perfil' }, 500);
+  }
+});
+
+// Change password
+api.put('/user/password', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    const { currentPassword, newPassword } = await c.req.json();
+    
+    if (!currentPassword || !newPassword) {
+      return c.json({ error: 'Senhas são obrigatórias' }, 400);
+    }
+    
+    if (newPassword.length < 8) {
+      return c.json({ error: 'Nova senha deve ter pelo menos 8 caracteres' }, 400);
+    }
+    
+    // Get current user
+    const user = await db.getUserById(DB, userId);
+    if (!user) {
+      return c.json({ error: 'Usuário não encontrado' }, 404);
+    }
+    
+    // Verify current password
+    const isValid = await auth.verifyPassword(currentPassword, user.password_hash);
+    if (!isValid) {
+      return c.json({ error: 'Senha atual incorreta' }, 401);
+    }
+    
+    // Hash new password
+    const newPasswordHash = await auth.hashPassword(newPassword);
+    
+    // Update password
+    await DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+      .bind(newPasswordHash, userId)
+      .run();
+    
+    return c.json({ success: true, message: 'Senha alterada com sucesso!' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return c.json({ error: 'Erro ao alterar senha' }, 500);
+  }
+});
+
+// Get user statistics
+api.get('/user/stats', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { DB } = c.env;
+    
+    // Get total completed lessons
+    const completedResult = await DB.prepare(`
+      SELECT COUNT(*) as total
+      FROM user_lesson_progress
+      WHERE user_id = ? AND is_completed = 1
+    `).bind(userId).first();
+    
+    // Get tracks with progress
+    const tracksResult = await DB.prepare(`
+      SELECT COUNT(DISTINCT track_id) as total
+      FROM user_track_progress
+      WHERE user_id = ?
+    `).bind(userId).first();
+    
+    // Get average progress
+    const avgResult = await DB.prepare(`
+      SELECT AVG(progress_percentage) as avg_progress
+      FROM user_track_progress
+      WHERE user_id = ?
+    `).bind(userId).first();
+    
+    return c.json({
+      completedLessons: completedResult?.total || 0,
+      startedTracks: tracksResult?.total || 0,
+      avgProgress: Math.round(avgResult?.avg_progress || 0)
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    return c.json({ error: 'Erro ao buscar estatísticas' }, 500);
+  }
+});
+
 // ========================================
 // CONTENT API ROUTES
 // ========================================
