@@ -114,103 +114,157 @@ app.get('/', async (c) => {
 app.get('/cadastro', (c) => {
   return c.html(
     <BaseLayout title="Criar Conta">
-      <div class="min-h-screen flex items-center justify-center hero-animated">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-          <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-2 mb-4">
+      <div class="min-h-screen flex bg-gray-900">
+        {/* Left Side - Form */}
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 relative overflow-y-auto">
+          <div class="w-full max-w-md">
+            {/* Logo */}
+            <div class="flex items-center space-x-2 mb-8">
               <i class="fas fa-graduation-cap text-3xl gradient-text"></i>
               <span class="text-2xl font-bold">HardMedicina</span>
             </div>
-            <h1 class="text-2xl font-bold">Criar Conta</h1>
-            <p class="text-gray-400 mt-2">Comece sua jornada médica agora</p>
-          </div>
-          
-          <form id="registerForm" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-2">Nome Completo</label>
-              <input 
-                type="text" 
-                name="name" 
-                required
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Dr. João Silva"
-              />
-            </div>
             
-            <div>
-              <label class="block text-sm font-medium mb-2">E-mail</label>
-              <input 
-                type="email" 
-                name="email" 
-                required
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="seu@email.com"
-              />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium mb-2">Senha</label>
-              <input 
-                type="password" 
-                id="password"
-                name="password" 
-                required
-                minlength="8"
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Mínimo 8 caracteres"
-              />
+            {/* Form Container */}
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <h2 class="text-2xl font-bold mb-2">Criar sua conta</h2>
+              <p class="text-gray-400 mb-6">Comece sua jornada médica agora</p>
               
-              {/* Password Strength Indicator */}
-              <div class="mt-3">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs text-gray-400">Força da senha:</span>
-                  <span id="strengthLabel" class="text-xs font-semibold"></span>
+              <form id="registerForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Nome Completo</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="Dr. João Silva"
+                  />
                 </div>
-                <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-                  <div 
-                    id="strengthBar" 
-                    class="h-full rounded-full transition-all duration-300 ease-out"
-                    style="width: 0%; background-color: #6b7280;"
-                  ></div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">E-mail</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="seu@email.com"
+                  />
                 </div>
-                <ul id="strengthFeedback" class="mt-2 space-y-1 hidden"></ul>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Senha</label>
+                  <input 
+                    type="password" 
+                    id="password"
+                    name="password" 
+                    required
+                    minlength="8"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                  
+                  {/* Password Strength Indicator */}
+                  <div class="mt-3">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs text-gray-400">Força da senha:</span>
+                      <span id="strengthLabel" class="text-xs font-semibold"></span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div 
+                        id="strengthBar" 
+                        class="h-full rounded-full transition-all duration-300 ease-out"
+                        style="width: 0%; background-color: #6b7280;"
+                      ></div>
+                    </div>
+                    <ul id="strengthFeedback" class="mt-2 space-y-1 hidden"></ul>
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Confirmar Senha</label>
+                  <input 
+                    type="password" 
+                    name="confirmPassword" 
+                    required
+                    minlength="8"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="Digite a senha novamente"
+                  />
+                </div>
+                
+                <div class="flex items-start">
+                  <input type="checkbox" id="terms" required class="w-4 h-4 mt-1 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500" />
+                  <label for="terms" class="ml-2 text-sm text-gray-400">
+                    Aceito os <a href="/termos" class="text-purple-400 hover:text-purple-300 transition">Termos de Uso</a> e 
+                    <a href="/privacidade" class="text-purple-400 hover:text-purple-300 transition"> Política de Privacidade</a>
+                  </label>
+                </div>
+                
+                <div id="error" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm"></div>
+                <div id="success" class="hidden bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm"></div>
+                
+                <button 
+                  type="submit" 
+                  class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition transform hover:scale-[1.02]"
+                >
+                  Criar Conta
+                </button>
+              </form>
+              
+              <p class="text-center text-gray-400 mt-6">
+                Já tem conta? <a href="/login" class="text-purple-400 hover:text-purple-300 font-semibold transition">Entrar</a>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Side - Visual/Branding */}
+        <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-pink-600 via-purple-600 to-indigo-700 flex-col justify-center items-center p-12 relative overflow-hidden">
+          {/* Decorative circles */}
+          <div class="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+          <div class="absolute bottom-20 right-20 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
+          
+          <div class="max-w-lg text-white relative z-10">
+            <div class="mb-8">
+              <i class="fas fa-user-md text-6xl opacity-90 mb-6"></i>
+            </div>
+            
+            <h2 class="text-4xl font-bold mb-4 leading-tight">
+              Transforme seu futuro médico
+            </h2>
+            <p class="text-lg opacity-90 mb-8">
+              Junte-se a milhares de estudantes e profissionais de medicina que confiam no HardMedicina.
+            </p>
+            
+            {/* Stats */}
+            <div class="grid grid-cols-2 gap-6 mb-8">
+              <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg text-center">
+                <p class="text-4xl font-bold mb-1">50+</p>
+                <p class="text-sm opacity-80">Trilhas Disponíveis</p>
+              </div>
+              <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg text-center">
+                <p class="text-4xl font-bold mb-1">500+</p>
+                <p class="text-sm opacity-80">Aulas em Vídeo</p>
               </div>
             </div>
             
-            <div>
-              <label class="block text-sm font-medium mb-2">Confirmar Senha</label>
-              <input 
-                type="password" 
-                name="confirmPassword" 
-                required
-                minlength="8"
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Digite a senha novamente"
-              />
+            {/* Benefits */}
+            <div class="space-y-3">
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-check-circle text-2xl"></i>
+                <p class="text-lg">Conteúdo atualizado constantemente</p>
+              </div>
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-check-circle text-2xl"></i>
+                <p class="text-lg">Certificados de conclusão</p>
+              </div>
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-check-circle text-2xl"></i>
+                <p class="text-lg">Suporte especializado</p>
+              </div>
             </div>
-            
-            <div class="flex items-start">
-              <input type="checkbox" id="terms" required class="mt-1 mr-2" />
-              <label for="terms" class="text-sm text-gray-400">
-                Aceito os <a href="/termos" class="text-purple-400 hover:underline">Termos de Uso</a> e 
-                <a href="/privacidade" class="text-purple-400 hover:underline">Política de Privacidade</a>
-              </label>
-            </div>
-            
-            <div id="error" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm"></div>
-            <div id="success" class="hidden bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm"></div>
-            
-            <button 
-              type="submit" 
-              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
-            >
-              Criar Conta
-            </button>
-          </form>
-          
-          <p class="text-center text-gray-400 mt-6">
-            Já tem conta? <a href="/login" class="text-purple-400 hover:underline font-semibold">Entrar</a>
-          </p>
+          </div>
         </div>
       </div>
     </BaseLayout>
@@ -220,61 +274,119 @@ app.get('/cadastro', (c) => {
 app.get('/login', (c) => {
   return c.html(
     <BaseLayout title="Login">
-      <div class="min-h-screen flex items-center justify-center hero-animated">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-          <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-2 mb-4">
+      <div class="min-h-screen flex bg-gray-900">
+        {/* Left Side - Form */}
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 relative">
+          <div class="w-full max-w-md">
+            {/* Logo */}
+            <div class="flex items-center space-x-2 mb-8">
               <i class="fas fa-graduation-cap text-3xl gradient-text"></i>
               <span class="text-2xl font-bold">HardMedicina</span>
             </div>
-            <h1 class="text-2xl font-bold">Entrar</h1>
-            <p class="text-gray-400 mt-2">Bem-vindo de volta!</p>
+            
+            {/* Form Container */}
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <h2 class="text-2xl font-bold mb-2">Bem-vindo de volta!</h2>
+              <p class="text-gray-400 mb-6">Entre com suas credenciais</p>
+              
+              <form id="loginForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">E-mail</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-2">Senha</label>
+                  <input 
+                    type="password" 
+                    name="password" 
+                    required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="Sua senha"
+                  />
+                </div>
+                
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <input type="checkbox" id="remember" class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500" />
+                    <label for="remember" class="ml-2 text-sm text-gray-400">Lembrar-me</label>
+                  </div>
+                  <a href="/recuperar-senha" class="text-sm text-purple-400 hover:text-purple-300 transition">Esqueci minha senha</a>
+                </div>
+                
+                <div id="error" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm"></div>
+                
+                <button 
+                  type="submit" 
+                  class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition transform hover:scale-[1.02]"
+                >
+                  Entrar
+                </button>
+              </form>
+              
+              <p class="text-center text-gray-400 mt-6">
+                Não tem conta? <a href="/cadastro" class="text-purple-400 hover:text-purple-300 font-semibold transition">Criar conta</a>
+              </p>
+            </div>
           </div>
+        </div>
+        
+        {/* Right Side - Visual/Branding */}
+        <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex-col justify-center items-center p-12 relative overflow-hidden">
+          {/* Decorative circles */}
+          <div class="absolute top-20 right-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+          <div class="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
           
-          <form id="loginForm" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-2">E-mail</label>
-              <input 
-                type="email" 
-                name="email" 
-                required
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="seu@email.com"
-              />
+          <div class="max-w-lg text-white relative z-10">
+            <div class="mb-8">
+              <i class="fas fa-stethoscope text-6xl opacity-90 mb-6"></i>
             </div>
             
-            <div>
-              <label class="block text-sm font-medium mb-2">Senha</label>
-              <input 
-                type="password" 
-                name="password" 
-                required
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Sua senha"
-              />
-            </div>
+            <h2 class="text-4xl font-bold mb-4 leading-tight">
+              Sua jornada médica começa aqui
+            </h2>
+            <p class="text-lg opacity-90 mb-8">
+              Acesse trilhas completas, aulas práticas e conteúdo de alta qualidade para sua formação médica.
+            </p>
             
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <input type="checkbox" id="remember" class="mr-2" />
-                <label for="remember" class="text-sm text-gray-400">Lembrar-me</label>
+            {/* Features */}
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex items-start space-x-3 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <i class="fas fa-check-circle text-2xl mt-1"></i>
+                <div>
+                  <p class="font-semibold">Trilhas Organizadas</p>
+                  <p class="text-sm opacity-80">Por especialidade</p>
+                </div>
               </div>
-              <a href="/recuperar-senha" class="text-sm text-purple-400 hover:underline">Esqueci minha senha</a>
+              <div class="flex items-start space-x-3 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <i class="fas fa-video text-2xl mt-1"></i>
+                <div>
+                  <p class="font-semibold">Aulas em Vídeo</p>
+                  <p class="text-sm opacity-80">Alta qualidade</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <i class="fas fa-chart-line text-2xl mt-1"></i>
+                <div>
+                  <p class="font-semibold">Progresso Detalhado</p>
+                  <p class="text-sm opacity-80">Acompanhe sua evolução</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <i class="fas fa-certificate text-2xl mt-1"></i>
+                <div>
+                  <p class="font-semibold">Certificados</p>
+                  <p class="text-sm opacity-80">Ao concluir trilhas</p>
+                </div>
+              </div>
             </div>
-            
-            <div id="error" class="hidden bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm"></div>
-            
-            <button 
-              type="submit" 
-              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
-            >
-              Entrar
-            </button>
-          </form>
-          
-          <p class="text-center text-gray-400 mt-6">
-            Não tem conta? <a href="/cadastro" class="text-purple-400 hover:underline font-semibold">Criar conta</a>
-          </p>
+          </div>
         </div>
       </div>
     </BaseLayout>
@@ -285,42 +397,106 @@ app.get('/login', (c) => {
 app.get('/recuperar-senha', (c) => {
   return c.html(
     <BaseLayout title="Recuperar Senha">
-      <div class="min-h-screen flex items-center justify-center hero-animated">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-          <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-2 mb-4">
+      <div class="min-h-screen flex bg-gray-900">
+        {/* Left Side - Form */}
+        <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 relative">
+          <div class="w-full max-w-md">
+            {/* Logo */}
+            <div class="flex items-center space-x-2 mb-8">
               <i class="fas fa-graduation-cap text-3xl gradient-text"></i>
               <span class="text-2xl font-bold">HardMedicina</span>
             </div>
-            <h1 class="text-2xl font-bold">Recuperar Senha</h1>
-            <p class="text-gray-400 mt-2">Informe seu e-mail cadastrado</p>
+            
+            {/* Form Container */}
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i class="fas fa-key text-3xl text-purple-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Recuperar Senha</h2>
+                <p class="text-gray-400">Enviaremos instruções para seu e-mail</p>
+              </div>
+              
+              <form id="recoverForm" class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">E-mail</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+                
+                <div id="message" class="hidden bg-blue-500/20 border border-blue-500 text-blue-300 px-4 py-3 rounded-lg text-sm"></div>
+                
+                <button 
+                  type="submit" 
+                  class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition transform hover:scale-[1.02]"
+                >
+                  Enviar Instruções
+                </button>
+              </form>
+              
+              <p class="text-center text-gray-400 mt-6">
+                <a href="/login" class="text-purple-400 hover:text-purple-300 font-semibold transition">
+                  <i class="fas fa-arrow-left mr-2"></i>Voltar ao login
+                </a>
+              </p>
+            </div>
           </div>
+        </div>
+        
+        {/* Right Side - Visual/Branding */}
+        <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex-col justify-center items-center p-12 relative overflow-hidden">
+          {/* Decorative circles */}
+          <div class="absolute top-20 right-20 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+          <div class="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
           
-          <form id="recoverForm" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-2">E-mail</label>
-              <input 
-                type="email" 
-                name="email" 
-                required
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="seu@email.com"
-              />
+          <div class="max-w-lg text-white relative z-10 text-center">
+            <div class="mb-8">
+              <i class="fas fa-shield-alt text-6xl opacity-90 mb-6"></i>
             </div>
             
-            <div id="message" class="hidden bg-blue-500/20 border border-blue-500 text-blue-300 px-4 py-3 rounded-lg text-sm"></div>
+            <h2 class="text-4xl font-bold mb-4 leading-tight">
+              Recupere sua conta com segurança
+            </h2>
+            <p class="text-lg opacity-90 mb-8">
+              Não se preocupe! Acontece com todos. Vamos ajudar você a recuperar o acesso à sua conta.
+            </p>
             
-            <button 
-              type="submit" 
-              class="w-full bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
-            >
-              Enviar Instruções
-            </button>
-          </form>
-          
-          <p class="text-center text-gray-400 mt-6">
-            <a href="/login" class="text-purple-400 hover:underline font-semibold">Voltar ao login</a>
-          </p>
+            {/* Steps */}
+            <div class="space-y-4 text-left">
+              <div class="flex items-start space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span class="font-bold">1</span>
+                </div>
+                <div>
+                  <p class="font-semibold mb-1">Informe seu e-mail</p>
+                  <p class="text-sm opacity-80">Digite o e-mail cadastrado</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span class="font-bold">2</span>
+                </div>
+                <div>
+                  <p class="font-semibold mb-1">Verifique seu e-mail</p>
+                  <p class="text-sm opacity-80">Enviaremos um link de recuperação</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span class="font-bold">3</span>
+                </div>
+                <div>
+                  <p class="font-semibold mb-1">Crie uma nova senha</p>
+                  <p class="text-sm opacity-80">Defina uma senha segura</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </BaseLayout>
