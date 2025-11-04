@@ -103,6 +103,7 @@ async function editTrack(id) {
     document.getElementById('trackSpecialty').value = track.specialty_id || '';
     document.getElementById('trackTitle').value = track.title;
     document.getElementById('trackDescription').value = track.description || '';
+    document.getElementById('trackCoverImage').value = track.cover_image || '';
     document.getElementById('trackLessons').value = track.total_lessons || 0;
     document.getElementById('trackDuration').value = track.duration_minutes || 0;
     
@@ -160,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const specialty_id = parseInt(document.getElementById('trackSpecialty').value);
         const title = document.getElementById('trackTitle').value;
         const description = document.getElementById('trackDescription').value;
+        const cover_image = document.getElementById('trackCoverImage').value.trim() || null;
         const total_lessons = parseInt(document.getElementById('trackLessons').value) || 0;
         const duration_minutes = parseInt(document.getElementById('trackDuration').value) || 0;
         
@@ -169,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         
-        const data = { specialty_id, title, description, total_lessons, duration_minutes };
+        const data = { specialty_id, title, description, cover_image, total_lessons, duration_minutes };
         
         console.log('💾 Saving track:', data);
         

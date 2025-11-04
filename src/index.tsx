@@ -1265,6 +1265,12 @@ app.get('/admin/trilhas', async (c) => {
               <textarea id="trackDescription" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
             </div>
             
+            <div>
+              <label class="block text-sm font-medium mb-2">URL da Imagem de Capa</label>
+              <input type="url" id="trackCoverImage" placeholder="https://exemplo.com/imagem.jpg" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <p class="text-xs text-gray-400 mt-1">Cole a URL de uma imagem (opcional)</p>
+            </div>
+            
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium mb-2">Total de Aulas</label>

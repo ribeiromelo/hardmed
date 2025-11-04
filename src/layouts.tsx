@@ -169,26 +169,39 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
                         </div>
                     </div>
                     
-                    <div class="relative group">
-                        <button class="flex items-center space-x-2 hover:text-purple-400 transition">
+                    <div class="relative">
+                        <button id="userMenuButton" onclick="toggleUserMenu()" class="flex items-center space-x-2 hover:text-purple-400 transition p-2 rounded-lg hover:bg-gray-700/50">
                             <img src="${user.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)}" 
                                  alt="${user.name}" 
                                  class="w-8 h-8 rounded-full"
                             />
                             <span class="hidden md:inline">${user.name}</span>
-                            <i class="fas fa-chevron-down text-sm"></i>
+                            <i id="userMenuChevron" class="fas fa-chevron-down text-sm transition-transform"></i>
                         </button>
                         
-                        <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-700">
-                            <a href="/perfil" class="block px-4 py-2 hover:bg-gray-700 transition">
-                                <i class="fas fa-user mr-2"></i> Meu Perfil
+                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-700 z-50">
+                            <div class="px-4 py-3 border-b border-gray-700">
+                                <p class="text-sm font-semibold">${user.name}</p>
+                                <p class="text-xs text-gray-400 truncate">${user.email}</p>
+                            </div>
+                            <a href="/perfil" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
+                                <i class="fas fa-user w-5 mr-3 text-purple-400"></i> 
+                                <span>Meu Perfil</span>
                             </a>
-                            <a href="/favoritos" class="block px-4 py-2 hover:bg-gray-700 transition">
-                                <i class="fas fa-heart mr-2"></i> Favoritos
+                            <a href="/favoritos" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
+                                <i class="fas fa-heart w-5 mr-3 text-pink-400"></i> 
+                                <span>Favoritos</span>
                             </a>
+                            ${user.role === 'admin' ? html`
+                            <a href="/admin" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
+                                <i class="fas fa-cog w-5 mr-3 text-yellow-400"></i> 
+                                <span>Admin</span>
+                            </a>
+                            ` : ''}
                             <hr class="my-2 border-gray-700" />
-                            <button onclick="logout()" class="block w-full text-left px-4 py-2 hover:bg-gray-700 transition text-red-400">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Sair
+                            <button onclick="logout()" class="flex items-center w-full text-left px-4 py-3 hover:bg-gray-700 transition text-red-400">
+                                <i class="fas fa-sign-out-alt w-5 mr-3"></i> 
+                                <span>Sair</span>
                             </button>
                         </div>
                     </div>
@@ -205,9 +218,43 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
 
 ${user ? html`
 <script>
+    // Logout function
     function logout() {
+        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
+    }
+    
+    // User menu dropdown
+    window.toggleUserMenu = function() {
+        const dropdown = document.getElementById('userMenuDropdown');
+        const chevron = document.getElementById('userMenuChevron');
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+            
+            // Add backdrop click listener
+            setTimeout(() => {
+                document.addEventListener('click', closeUserMenuOnClickOutside);
+            }, 100);
+        } else {
+            dropdown.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+            document.removeEventListener('click', closeUserMenuOnClickOutside);
+        }
+    }
+    
+    function closeUserMenuOnClickOutside(event) {
+        const dropdown = document.getElementById('userMenuDropdown');
+        const button = document.getElementById('userMenuButton');
+        
+        if (!dropdown.contains(event.target) && !button.contains(event.target)) {
+            dropdown.classList.add('hidden');
+            document.getElementById('userMenuChevron').classList.remove('rotate-180');
+            document.removeEventListener('click', closeUserMenuOnClickOutside);
+        }
     }
 </script>
 ` : ''}

@@ -59,9 +59,14 @@ async function loadAllTracks() {
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             ${specialtyTracks.map(track => `
-              <a href="/trilha/${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover">
-                <div class="h-48 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center">
-                  <i class="fas fa-book-medical text-6xl gradient-text"></i>
+              <a href="/trilha/${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover group">
+                <div class="h-48 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center relative overflow-hidden">
+                  ${track.cover_image ? `
+                    <img src="${track.cover_image}" alt="${track.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+                  ` : `
+                    <i class="fas fa-book-medical text-6xl gradient-text"></i>
+                  `}
                 </div>
                 <div class="p-6">
                   <h3 class="font-bold text-xl mb-2">${track.title}</h3>
