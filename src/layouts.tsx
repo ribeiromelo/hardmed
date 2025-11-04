@@ -195,7 +195,7 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
                             ${user.role === 'admin' ? html`
                             <a href="/admin" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
                                 <i class="fas fa-cog w-5 mr-3 text-yellow-400"></i> 
-                                <span>Admin</span>
+                                <span>Painel de Controle</span>
                             </a>
                             ` : ''}
                             <hr class="my-2 border-gray-700" />

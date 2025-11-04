@@ -310,7 +310,7 @@ api.post('/tracks', async (c) => {
     
     const { DB } = c.env;
     const body = await c.req.json();
-    const { specialty_id, title, description, total_lessons, duration_minutes } = body;
+    const { specialty_id, title, description, cover_image, total_lessons, duration_minutes } = body;
     
     if (!title) {
       return c.json({ error: 'Título é obrigatório' }, 400);
@@ -328,9 +328,9 @@ api.post('/tracks', async (c) => {
       .replace(/^-+|-+$/g, '');
     
     const result = await DB.prepare(`
-      INSERT INTO tracks (specialty_id, title, slug, description, total_lessons, duration_minutes)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(specialty_id, title, slug, description || null, total_lessons || 0, duration_minutes || 0).run();
+      INSERT INTO tracks (specialty_id, title, slug, description, cover_image, total_lessons, duration_minutes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(specialty_id, title, slug, description || null, cover_image || null, total_lessons || 0, duration_minutes || 0).run();
     
     return c.json({ 
       id: result.meta.last_row_id,
@@ -338,6 +338,7 @@ api.post('/tracks', async (c) => {
       title,
       slug,
       description,
+      cover_image,
       total_lessons,
       duration_minutes
     }, 201);
@@ -358,7 +359,7 @@ api.put('/tracks/:id', async (c) => {
     const { DB } = c.env;
     const id = c.req.param('id');
     const body = await c.req.json();
-    const { specialty_id, title, description, total_lessons, duration_minutes } = body;
+    const { specialty_id, title, description, cover_image, total_lessons, duration_minutes } = body;
     
     if (!title) {
       return c.json({ error: 'Título é obrigatório' }, 400);
@@ -377,9 +378,9 @@ api.put('/tracks/:id', async (c) => {
     
     await DB.prepare(`
       UPDATE tracks 
-      SET specialty_id = ?, title = ?, slug = ?, description = ?, total_lessons = ?, duration_minutes = ?
+      SET specialty_id = ?, title = ?, slug = ?, description = ?, cover_image = ?, total_lessons = ?, duration_minutes = ?
       WHERE id = ?
-    `).bind(specialty_id, title, slug, description || null, total_lessons || 0, duration_minutes || 0, id).run();
+    `).bind(specialty_id, title, slug, description || null, cover_image || null, total_lessons || 0, duration_minutes || 0, id).run();
     
     return c.json({ 
       id,
@@ -387,6 +388,7 @@ api.put('/tracks/:id', async (c) => {
       title,
       slug,
       description,
+      cover_image,
       total_lessons,
       duration_minutes
     });
