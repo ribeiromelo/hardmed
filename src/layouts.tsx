@@ -188,10 +188,6 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
                                 <i class="fas fa-user w-5 mr-3 text-purple-400"></i> 
                                 <span>Meu Perfil</span>
                             </a>
-                            <a href="/favoritos" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
-                                <i class="fas fa-heart w-5 mr-3 text-pink-400"></i> 
-                                <span>Favoritos</span>
-                            </a>
                             ${user.role === 'admin' ? html`
                             <a href="/admin" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
                                 <i class="fas fa-cog w-5 mr-3 text-yellow-400"></i> 

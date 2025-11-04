@@ -612,7 +612,7 @@ api.post('/lessons', async (c) => {
     
     const { DB } = c.env;
     const body = await c.req.json();
-    const { season_id, title, description, video_url, duration_minutes, pdf_url } = body;
+    const { season_id, title, description, video_url, duration_minutes, pdf_url, key_points } = body;
     
     if (!season_id || !title || !video_url) {
       return c.json({ error: 'Temporada, título e URL do vídeo são obrigatórios' }, 400);
@@ -627,9 +627,9 @@ api.post('/lessons', async (c) => {
       .replace(/^-+|-+$/g, '');
     
     const result = await DB.prepare(`
-      INSERT INTO lessons (season_id, title, slug, description, video_url, duration_minutes, pdf_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null).run();
+      INSERT INTO lessons (season_id, title, slug, description, video_url, duration_minutes, pdf_url, key_points)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null, key_points || null).run();
     
     return c.json({ 
       id: result.meta.last_row_id,
@@ -639,7 +639,8 @@ api.post('/lessons', async (c) => {
       description,
       video_url,
       duration_minutes,
-      pdf_url
+      pdf_url,
+      key_points
     }, 201);
   } catch (error) {
     console.error('Create lesson error:', error);
@@ -658,7 +659,7 @@ api.put('/lessons/:id', async (c) => {
     const { DB } = c.env;
     const id = c.req.param('id');
     const body = await c.req.json();
-    const { season_id, title, description, video_url, duration_minutes, pdf_url } = body;
+    const { season_id, title, description, video_url, duration_minutes, pdf_url, key_points } = body;
     
     if (!season_id || !title || !video_url) {
       return c.json({ error: 'Temporada, título e URL do vídeo são obrigatórios' }, 400);
@@ -674,9 +675,9 @@ api.put('/lessons/:id', async (c) => {
     
     await DB.prepare(`
       UPDATE lessons 
-      SET season_id = ?, title = ?, slug = ?, description = ?, video_url = ?, duration_minutes = ?, pdf_url = ?
+      SET season_id = ?, title = ?, slug = ?, description = ?, video_url = ?, duration_minutes = ?, pdf_url = ?, key_points = ?
       WHERE id = ?
-    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null, id).run();
+    `).bind(season_id, title, slug, description || null, video_url, duration_minutes || 0, pdf_url || null, key_points || null, id).run();
     
     return c.json({ 
       id,
@@ -686,7 +687,8 @@ api.put('/lessons/:id', async (c) => {
       description,
       video_url,
       duration_minutes,
-      pdf_url
+      pdf_url,
+      key_points
     });
   } catch (error) {
     console.error('Update lesson error:', error);

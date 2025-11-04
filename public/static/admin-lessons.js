@@ -185,6 +185,18 @@ async function editLesson(id) {
     document.getElementById('lessonDuration').value = lesson.duration_minutes || 0;
     document.getElementById('lessonPdfUrl').value = lesson.pdf_url || '';
     
+    // Parse key_points from JSON string to textarea (one per line)
+    if (lesson.key_points) {
+      try {
+        const keyPointsArray = JSON.parse(lesson.key_points);
+        document.getElementById('lessonKeyPoints').value = keyPointsArray.join('\n');
+      } catch (e) {
+        document.getElementById('lessonKeyPoints').value = '';
+      }
+    } else {
+      document.getElementById('lessonKeyPoints').value = '';
+    }
+    
     // Clear any previous messages
     const messageEl = document.getElementById('formMessage');
     messageEl.className = 'hidden';
@@ -243,13 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const duration_minutes = parseInt(document.getElementById('lessonDuration').value) || 0;
         const pdf_url = document.getElementById('lessonPdfUrl').value;
         
+        // Parse key_points from textarea (one per line) to JSON string
+        const keyPointsText = document.getElementById('lessonKeyPoints').value.trim();
+        const key_points = keyPointsText ? JSON.stringify(keyPointsText.split('\n').filter(line => line.trim())) : null;
+        
         if (!season_id) {
           messageEl.textContent = 'Por favor, selecione uma trilha e temporada';
           messageEl.className = 'p-4 rounded-lg bg-red-500/20 border border-red-500 text-red-300';
           return;
         }
         
-        const data = { season_id, title, description, video_url, duration_minutes, pdf_url };
+        const data = { season_id, title, description, video_url, duration_minutes, pdf_url, key_points };
         
         console.log('💾 Saving lesson:', data);
         

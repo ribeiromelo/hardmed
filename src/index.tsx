@@ -379,10 +379,10 @@ app.get('/login', (c) => {
                 </div>
               </div>
               <div class="flex items-start space-x-3 bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                <i class="fas fa-certificate text-2xl mt-1"></i>
+                <i class="fas fa-book-open text-2xl mt-1"></i>
                 <div>
-                  <p class="font-semibold">Certificados</p>
-                  <p class="text-sm opacity-80">Ao concluir trilhas</p>
+                  <p class="font-semibold">Casos Clínicos</p>
+                  <p class="text-sm opacity-80">Aplicação prática</p>
                 </div>
               </div>
             </div>
@@ -1500,6 +1500,12 @@ app.get('/admin/aulas', async (c) => {
               <input type="url" id="lessonPdfUrl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="https://..." />
             </div>
             
+            <div>
+              <label class="block text-sm font-medium mb-2">Pontos-chave (opcional)</label>
+              <textarea id="lessonKeyPoints" rows="4" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Digite cada ponto-chave em uma linha separada"></textarea>
+              <p class="text-xs text-gray-400 mt-1">Um ponto por linha. Exemplo:<br/>Diagnóstico diferencial de dor torácica<br/>Critérios de estratificação de risco</p>
+            </div>
+            
             <div id="formMessage" class="hidden p-4 rounded-lg"></div>
             
             <div class="flex gap-4">
@@ -1517,54 +1523,6 @@ app.get('/admin/aulas', async (c) => {
       <script src="/static/admin-lessons.js"></script>
     </BaseLayout>
   );
-});
-
-// ========================================
-// TEST LOGIN PAGE
-// ========================================
-app.get('/test-login', (c) => {
-  return c.html(`
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Test Login</title>
-<style>body{font-family:Arial;max-width:400px;margin:50px auto;padding:20px;background:#1a1a2e;color:#fff}input,button{width:100%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #666}input{background:#333;color:#fff}button{background:#667eea;color:#fff;border:none;cursor:pointer;font-weight:bold}button:hover{background:#764ba2}#result{margin-top:20px;padding:15px;border-radius:5px;display:none}.success,.error,.info{display:block!important}.success{background:#10b981}.error{background:#ef4444}.info{background:#3b82f6}</style>
-</head><body>
-<h1>🧪 Test Login</h1>
-<form id="testForm">
-<input type="email" id="email" placeholder="Email" value="admin@hardmedicina.com">
-<input type="password" id="password" placeholder="Senha" value="admin123">
-<button type="submit">Login</button>
-</form>
-<div id="result"></div>
-<div style="margin-top:20px;font-size:12px;color:#888">
-<p><strong>Credenciais:</strong></p>
-<p>Admin: admin@hardmedicina.com / admin123</p>
-<p>Student: erique@exemplo.com / admin123</p>
-</div>
-<script>
-const resultDiv=document.getElementById('result');
-function showResult(message,type){resultDiv.textContent=message;resultDiv.className=type;}
-document.getElementById('testForm').addEventListener('submit',async(e)=>{
-e.preventDefault();
-const email=document.getElementById('email').value;
-const password=document.getElementById('password').value;
-showResult('Fazendo login...','info');
-try{
-const response=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-const result=await response.json();
-if(!response.ok){showResult('❌ Erro: '+(result.error||'Login falhou'),'error');return;}
-const expiryDate=new Date();expiryDate.setDate(expiryDate.getDate()+7);
-document.cookie='auth_token='+result.token+'; path=/; expires='+expiryDate.toUTCString()+'; SameSite=Lax';
-showResult('✅ Login OK! Redirecionando...','success');
-setTimeout(()=>{window.location.href='/dashboard';},1500);
-}catch(error){showResult('❌ Erro: '+error.message,'error');}
-});
-window.addEventListener('load',()=>{
-const cookie=document.cookie.match(/auth_token=([^;]+)/);
-if(cookie){showResult('ℹ️ Token existente: '+cookie[1].substring(0,30)+'...','info');}
-});
-</script>
-</body></html>
-  `);
 });
 
 // ========================================
@@ -1681,10 +1639,318 @@ app.get('/admin/notificacoes', async (c) => {
 });
 
 // ========================================
-// PÁGINAS ESTÁTICAS PLACEHOLDER
+// TERMOS E CONDIÇÕES
 // ========================================
-app.get('/termos', (c) => c.html(<BaseLayout title="Termos de Uso">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Termos de Uso</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
-app.get('/privacidade', (c) => c.html(<BaseLayout title="Política de Privacidade">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Política de Privacidade</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
+app.get('/termos', (c) => {
+  return c.html(
+    <BaseLayout title="Termos e Condições">
+      {Header({})}
+      
+      <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-2 gradient-text">Termos e Condições de Uso</h1>
+        <p class="text-gray-400 mb-8">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
+        
+        <div class="space-y-8 text-gray-300">
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">1. Aceitação dos Termos</h2>
+            <p class="mb-4">
+              Ao acessar e usar a plataforma HardMedicina, você concorda em cumprir e estar vinculado aos seguintes termos e condições de uso. 
+              Se você não concordar com qualquer parte destes termos, não deverá usar nossos serviços.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">2. Descrição do Serviço</h2>
+            <p class="mb-4">
+              A HardMedicina é uma plataforma educacional online que oferece trilhas de aprendizado médico, incluindo vídeo-aulas, 
+              materiais de apoio e casos clínicos. Nosso conteúdo é destinado a estudantes de medicina, médicos residentes e 
+              profissionais da área de saúde.
+            </p>
+            <p class="mb-4">
+              <strong>Importante:</strong> O conteúdo fornecido não substitui aconselhamento médico profissional, diagnóstico ou tratamento. 
+              Sempre busque orientação de profissionais qualificados para questões médicas específicas.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">3. Cadastro e Conta de Usuário</h2>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li>Você deve fornecer informações verdadeiras, precisas e completas durante o registro</li>
+              <li>É sua responsabilidade manter a confidencialidade de sua senha</li>
+              <li>Você é responsável por todas as atividades que ocorrem sob sua conta</li>
+              <li>Notifique-nos imediatamente sobre qualquer uso não autorizado de sua conta</li>
+              <li>Reservamo-nos o direito de suspender ou encerrar contas que violem estes termos</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">4. Uso Aceitável</h2>
+            <p class="mb-4">Você concorda em NÃO:</p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li>Usar a plataforma para qualquer propósito ilegal ou não autorizado</li>
+              <li>Compartilhar sua conta com terceiros</li>
+              <li>Copiar, distribuir ou modificar qualquer conteúdo da plataforma sem autorização</li>
+              <li>Fazer engenharia reversa ou tentar acessar o código-fonte da plataforma</li>
+              <li>Interferir ou interromper o funcionamento da plataforma</li>
+              <li>Usar bots, scrapers ou outras ferramentas automatizadas</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">5. Propriedade Intelectual</h2>
+            <p class="mb-4">
+              Todo o conteúdo disponível na HardMedicina, incluindo textos, vídeos, imagens, logos e materiais de apoio, 
+              é protegido por direitos autorais e outras leis de propriedade intelectual. O conteúdo é de propriedade da 
+              HardMedicina ou de seus licenciadores.
+            </p>
+            <p class="mb-4">
+              É concedida a você uma licença limitada, não exclusiva e intransferível para acessar e usar o conteúdo 
+              exclusivamente para fins de aprendizado pessoal e não comercial.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">6. Conteúdo do Usuário</h2>
+            <p class="mb-4">
+              Se você enviar comentários, perguntas ou qualquer outro conteúdo para a plataforma, você concede à HardMedicina 
+              uma licença mundial, não exclusiva, livre de royalties para usar, reproduzir e distribuir esse conteúdo.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">7. Limitação de Responsabilidade</h2>
+            <p class="mb-4">
+              A HardMedicina e seus afiliados não serão responsáveis por quaisquer danos diretos, indiretos, incidentais, 
+              especiais ou consequenciais resultantes do uso ou incapacidade de usar nossos serviços.
+            </p>
+            <p class="mb-4">
+              Não garantimos que o serviço estará disponível ininterruptamente ou livre de erros. 
+              Você usa a plataforma por sua conta e risco.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">8. Modificações dos Termos</h2>
+            <p class="mb-4">
+              Reservamo-nos o direito de modificar estes termos a qualquer momento. Notificaremos os usuários sobre 
+              mudanças significativas através da plataforma ou por e-mail. O uso continuado da plataforma após as 
+              modificações constitui aceitação dos novos termos.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">9. Rescisão</h2>
+            <p class="mb-4">
+              Podemos suspender ou encerrar seu acesso à plataforma imediatamente, sem aviso prévio, por qualquer motivo, 
+              incluindo violação destes termos. Você pode encerrar sua conta a qualquer momento entrando em contato conosco.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">10. Lei Aplicável</h2>
+            <p class="mb-4">
+              Estes termos serão regidos e interpretados de acordo com as leis do Brasil. Qualquer disputa será 
+              resolvida nos tribunais competentes do Brasil.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">11. Contato</h2>
+            <p class="mb-4">
+              Se você tiver dúvidas sobre estes Termos e Condições, entre em contato conosco através da página de contato 
+              ou pelo e-mail: contato@hardmedicina.com
+            </p>
+          </section>
+        </div>
+        
+        <div class="mt-12 p-6 bg-gray-800 rounded-lg border border-gray-700">
+          <p class="text-center text-gray-300">
+            Ao usar a HardMedicina, você reconhece que leu, compreendeu e concordou em estar vinculado a estes Termos e Condições.
+          </p>
+        </div>
+      </main>
+      
+      {Footer()}
+    </BaseLayout>
+  );
+});
+
+// ========================================
+// POLÍTICA DE PRIVACIDADE
+// ========================================
+app.get('/privacidade', (c) => {
+  return c.html(
+    <BaseLayout title="Política de Privacidade">
+      {Header({})}
+      
+      <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-2 gradient-text">Política de Privacidade</h1>
+        <p class="text-gray-400 mb-8">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
+        
+        <div class="space-y-8 text-gray-300">
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">1. Introdução</h2>
+            <p class="mb-4">
+              A HardMedicina ("nós", "nosso" ou "plataforma") está comprometida em proteger sua privacidade. 
+              Esta Política de Privacidade explica como coletamos, usamos, divulgamos e protegemos suas informações 
+              quando você usa nossos serviços.
+            </p>
+            <p class="mb-4">
+              Esta política está em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018) 
+              e outras legislações aplicáveis de proteção de dados.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">2. Informações que Coletamos</h2>
+            
+            <h3 class="text-xl font-semibold mb-3 text-purple-400">2.1 Informações Fornecidas por Você</h3>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li><strong>Dados de Cadastro:</strong> Nome, e-mail, senha (criptografada)</li>
+              <li><strong>Dados de Perfil:</strong> Foto de perfil (opcional), informações acadêmicas</li>
+              <li><strong>Comunicações:</strong> Mensagens enviadas através de formulários de contato ou suporte</li>
+            </ul>
+            
+            <h3 class="text-xl font-semibold mb-3 text-purple-400">2.2 Informações Coletadas Automaticamente</h3>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li><strong>Dados de Uso:</strong> Aulas assistidas, progresso em trilhas, tempo de visualização</li>
+              <li><strong>Dados Técnicos:</strong> Endereço IP, tipo de navegador, sistema operacional</li>
+              <li><strong>Cookies:</strong> Utilizamos cookies para manter sua sessão ativa e melhorar a experiência</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">3. Como Usamos Suas Informações</h2>
+            <p class="mb-4">Utilizamos suas informações para:</p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li>Fornecer, operar e manter nossa plataforma educacional</li>
+              <li>Gerenciar sua conta e autenticar seu acesso</li>
+              <li>Personalizar sua experiência de aprendizado</li>
+              <li>Acompanhar seu progresso nas trilhas e aulas</li>
+              <li>Enviar notificações importantes sobre o serviço</li>
+              <li>Responder a suas dúvidas e solicitações de suporte</li>
+              <li>Analisar o uso da plataforma para melhorias</li>
+              <li>Detectar e prevenir fraudes e abusos</li>
+              <li>Cumprir obrigações legais</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">4. Compartilhamento de Informações</h2>
+            <p class="mb-4">
+              Não vendemos suas informações pessoais. Podemos compartilhar suas informações apenas nas seguintes situações:
+            </p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li><strong>Provedores de Serviço:</strong> Com empresas que nos ajudam a operar a plataforma (ex: hospedagem)</li>
+              <li><strong>Exigências Legais:</strong> Quando exigido por lei ou para proteger nossos direitos legais</li>
+              <li><strong>Transferência de Negócios:</strong> Em caso de fusão, venda ou transferência de ativos</li>
+              <li><strong>Com Seu Consentimento:</strong> Quando você autorizar explicitamente</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">5. Segurança dos Dados</h2>
+            <p class="mb-4">
+              Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações:
+            </p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li>Criptografia de senhas usando algoritmos seguros (bcrypt)</li>
+              <li>Comunicação segura via HTTPS/TLS</li>
+              <li>Controles de acesso rigorosos aos dados</li>
+              <li>Monitoramento regular de vulnerabilidades</li>
+              <li>Backups regulares dos dados</li>
+            </ul>
+            <p class="mb-4">
+              No entanto, nenhum método de transmissão pela internet é 100% seguro. 
+              Não podemos garantir a segurança absoluta de suas informações.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">6. Retenção de Dados</h2>
+            <p class="mb-4">
+              Manteremos suas informações pessoais apenas pelo tempo necessário para cumprir os propósitos descritos 
+              nesta política, a menos que um período de retenção mais longo seja exigido ou permitido por lei.
+            </p>
+            <p class="mb-4">
+              Quando você solicitar a exclusão de sua conta, removeremos suas informações pessoais de nossos 
+              sistemas ativos, mas algumas informações podem ser retidas para fins legais ou de auditoria.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">7. Seus Direitos (LGPD)</h2>
+            <p class="mb-4">De acordo com a LGPD, você tem os seguintes direitos:</p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li><strong>Acesso:</strong> Solicitar uma cópia de seus dados pessoais</li>
+              <li><strong>Correção:</strong> Corrigir dados incompletos, inexatos ou desatualizados</li>
+              <li><strong>Exclusão:</strong> Solicitar a exclusão de seus dados pessoais</li>
+              <li><strong>Portabilidade:</strong> Solicitar a transferência de seus dados para outro provedor</li>
+              <li><strong>Revogação:</strong> Revogar o consentimento para o tratamento de dados</li>
+              <li><strong>Oposição:</strong> Opor-se ao tratamento de seus dados em certas circunstâncias</li>
+              <li><strong>Informação:</strong> Obter informações sobre o uso compartilhado de dados</li>
+            </ul>
+            <p class="mb-4">
+              Para exercer qualquer destes direitos, entre em contato conosco através de: privacidade@hardmedicina.com
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">8. Cookies e Tecnologias Similares</h2>
+            <p class="mb-4">
+              Utilizamos cookies e tecnologias similares para melhorar sua experiência na plataforma:
+            </p>
+            <ul class="list-disc list-inside space-y-2 mb-4">
+              <li><strong>Cookies Essenciais:</strong> Necessários para o funcionamento básico (ex: autenticação)</li>
+              <li><strong>Cookies de Preferência:</strong> Armazenam suas configurações e preferências</li>
+              <li><strong>Cookies Analíticos:</strong> Nos ajudam a entender como você usa a plataforma</li>
+            </ul>
+            <p class="mb-4">
+              Você pode configurar seu navegador para recusar cookies, mas isso pode afetar algumas funcionalidades da plataforma.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">9. Privacidade de Menores</h2>
+            <p class="mb-4">
+              Nossa plataforma é destinada a estudantes de medicina e profissionais de saúde. 
+              Não coletamos intencionalmente informações de menores de 16 anos sem o consentimento dos pais ou responsáveis. 
+              Se você acredita que coletamos inadvertidamente informações de um menor, entre em contato conosco imediatamente.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">10. Alterações nesta Política</h2>
+            <p class="mb-4">
+              Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas 
+              através da plataforma ou por e-mail. A data da "Última atualização" no topo desta página indica quando a 
+              política foi revisada pela última vez.
+            </p>
+          </section>
+          
+          <section>
+            <h2 class="text-2xl font-bold mb-4 text-white">11. Contato</h2>
+            <p class="mb-4">
+              Se você tiver dúvidas sobre esta Política de Privacidade ou sobre como tratamos seus dados, entre em contato:
+            </p>
+            <ul class="list-none space-y-2 mb-4">
+              <li><strong>E-mail:</strong> privacidade@hardmedicina.com</li>
+              <li><strong>Encarregado de Dados (DPO):</strong> dpo@hardmedicina.com</li>
+            </ul>
+          </section>
+        </div>
+        
+        <div class="mt-12 p-6 bg-gray-800 rounded-lg border border-gray-700">
+          <p class="text-center text-gray-300">
+            Ao usar a HardMedicina, você reconhece que leu e compreendeu esta Política de Privacidade e concorda com o tratamento de seus dados conforme descrito.
+          </p>
+        </div>
+      </main>
+      
+      {Footer()}
+    </BaseLayout>
+  );
+});
 app.get('/ajuda', (c) => c.html(<BaseLayout title="Central de Ajuda">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Central de Ajuda</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
 app.get('/contato', (c) => c.html(<BaseLayout title="Contato">{Header({})}<main class="container mx-auto px-4 py-8"><h1 class="text-4xl font-bold mb-4">Contato</h1><p class="text-gray-400">Página em desenvolvimento.</p></main>{Footer()}</BaseLayout>));
 
