@@ -1639,6 +1639,191 @@ app.get('/admin/notificacoes', async (c) => {
 });
 
 // ========================================
+// ADMIN - RELATÓRIOS
+// ========================================
+app.get('/admin/relatorios', async (c) => {
+  const user = await getUserFromToken(c);
+  if (!user || user.role !== 'admin') {
+    return c.redirect('/dashboard');
+  }
+  
+  return c.html(
+    <BaseLayout title="Relatórios" user={user}>
+      {Header({ user })}
+      
+      <main class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-4xl font-bold mb-2">Relatórios e Estatísticas</h1>
+            <p class="text-gray-400">Análise completa de uso e desempenho da plataforma</p>
+          </div>
+          <a href="/admin" class="text-purple-400 hover:text-purple-300">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar ao Admin
+          </a>
+        </div>
+        
+        {/* Estatísticas Gerais */}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-users text-4xl"></i>
+              <div class="text-right">
+                <p class="text-3xl font-bold" id="reportTotalUsers">0</p>
+                <p class="text-sm opacity-80" id="reportNewUsers">+0 hoje</p>
+              </div>
+            </div>
+            <p class="text-lg opacity-90">Total de Usuários</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-pink-600 to-pink-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-video text-4xl"></i>
+              <div class="text-right">
+                <p class="text-3xl font-bold" id="reportTotalViews">0</p>
+                <p class="text-sm opacity-80" id="reportViewsToday">+0 hoje</p>
+              </div>
+            </div>
+            <p class="text-lg opacity-90">Visualizações</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-chart-line text-4xl"></i>
+              <div class="text-right">
+                <p class="text-3xl font-bold" id="reportCompletionRate">0%</p>
+                <p class="text-sm opacity-80">média geral</p>
+              </div>
+            </div>
+            <p class="text-lg opacity-90">Taxa de Conclusão</p>
+          </div>
+          
+          <div class="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <i class="fas fa-clock text-4xl"></i>
+              <div class="text-right">
+                <p class="text-3xl font-bold" id="reportAvgTime">0h</p>
+                <p class="text-sm opacity-80">por usuário</p>
+              </div>
+            </div>
+            <p class="text-lg opacity-90">Tempo Médio</p>
+          </div>
+        </div>
+        
+        {/* Filtros de Período */}
+        <div class="bg-gray-800 rounded-xl p-6 mb-8">
+          <div class="flex flex-wrap gap-4 items-center">
+            <label class="text-sm font-medium">Período:</label>
+            <select id="periodFilter" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="7">Últimos 7 dias</option>
+              <option value="30" selected>Últimos 30 dias</option>
+              <option value="90">Últimos 90 dias</option>
+              <option value="365">Último ano</option>
+              <option value="all">Todo o período</option>
+            </select>
+            
+            <button onclick="refreshReports()" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg transition">
+              <i class="fas fa-sync-alt mr-2"></i>Atualizar
+            </button>
+            
+            <button onclick="exportReport()" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg transition ml-auto">
+              <i class="fas fa-download mr-2"></i>Exportar Relatório
+            </button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Trilhas Mais Populares */}
+          <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+              <i class="fas fa-fire text-orange-500 mr-3"></i>
+              Trilhas Mais Populares
+            </h2>
+            <div id="popularTracks" class="space-y-3">
+              <p class="text-gray-400 text-center py-8">Carregando...</p>
+            </div>
+          </div>
+          
+          {/* Aulas Mais Assistidas */}
+          <div class="bg-gray-800 rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+              <i class="fas fa-star text-yellow-500 mr-3"></i>
+              Aulas Mais Assistidas
+            </h2>
+            <div id="popularLessons" class="space-y-3">
+              <p class="text-gray-400 text-center py-8">Carregando...</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Usuários Mais Ativos */}
+        <div class="bg-gray-800 rounded-xl p-6 mb-8">
+          <h2 class="text-2xl font-bold mb-4 flex items-center">
+            <i class="fas fa-medal text-purple-500 mr-3"></i>
+            Usuários Mais Ativos
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full" id="activeUsersTable">
+              <thead class="border-b border-gray-700">
+                <tr>
+                  <th class="text-left py-3 px-4">Posição</th>
+                  <th class="text-left py-3 px-4">Usuário</th>
+                  <th class="text-left py-3 px-4">Aulas Concluídas</th>
+                  <th class="text-left py-3 px-4">Trilhas Iniciadas</th>
+                  <th class="text-left py-3 px-4">Tempo Total</th>
+                  <th class="text-left py-3 px-4">Último Acesso</th>
+                </tr>
+              </thead>
+              <tbody id="activeUsersBody">
+                <tr><td colspan="6" class="text-center text-gray-400 py-8">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        {/* Progresso por Especialidade */}
+        <div class="bg-gray-800 rounded-xl p-6 mb-8">
+          <h2 class="text-2xl font-bold mb-4 flex items-center">
+            <i class="fas fa-graduation-cap text-blue-500 mr-3"></i>
+            Progresso por Especialidade
+          </h2>
+          <div id="specialtyProgress" class="space-y-4">
+            <p class="text-gray-400 text-center py-8">Carregando...</p>
+          </div>
+        </div>
+        
+        {/* Taxas de Conclusão por Trilha */}
+        <div class="bg-gray-800 rounded-xl p-6">
+          <h2 class="text-2xl font-bold mb-4 flex items-center">
+            <i class="fas fa-chart-pie text-green-500 mr-3"></i>
+            Taxas de Conclusão por Trilha
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full" id="completionRatesTable">
+              <thead class="border-b border-gray-700">
+                <tr>
+                  <th class="text-left py-3 px-4">Trilha</th>
+                  <th class="text-left py-3 px-4">Inscritos</th>
+                  <th class="text-left py-3 px-4">Em Progresso</th>
+                  <th class="text-left py-3 px-4">Concluídos</th>
+                  <th class="text-left py-3 px-4">Taxa de Conclusão</th>
+                </tr>
+              </thead>
+              <tbody id="completionRatesBody">
+                <tr><td colspan="5" class="text-center text-gray-400 py-8">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+      
+      {Footer()}
+      
+      <script src="/static/admin-reports.js"></script>
+    </BaseLayout>
+  );
+});
+
+// ========================================
 // TERMOS E CONDIÇÕES
 // ========================================
 app.get('/termos', (c) => {
