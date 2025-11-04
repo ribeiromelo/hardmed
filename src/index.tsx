@@ -10,6 +10,28 @@ import { getUserFromToken } from './middleware';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// Security Headers
+app.use('*', async (c, next) => {
+  // Content Security Policy
+  c.header('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; " +
+    "img-src 'self' data: https: http:; " +
+    "connect-src 'self';"
+  );
+  
+  // Other security headers
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('X-Frame-Options', 'DENY');
+  c.header('X-XSS-Protection', '1; mode=block');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  await next();
+});
+
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
 
