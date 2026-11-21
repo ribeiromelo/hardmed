@@ -54,36 +54,44 @@ async function loadDashboard() {
     const myTracksDiv = document.getElementById('myTracks');
     if (myTracksDiv && tracks.length > 0) {
       myTracksDiv.innerHTML = tracks.slice(0, 6).map(track => `
-        <a href="/trilha/${track.slug}" class="bg-gray-800 rounded-xl overflow-hidden card-hover group">
-          <div class="h-40 bg-gradient-to-br from-purple-600/20 to-pink-600/20 flex items-center justify-center relative overflow-hidden">
+        <a href="/trilha/${track.slug}" class="bg-theme-secondary border border-theme rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:border-primary-500 transition-all duration-300 group flex flex-col h-full">
+          <div class="h-48 relative overflow-hidden">
             ${track.cover_image ? `
-              <img src="${track.cover_image}" alt="${track.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-              <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+              <img src="${track.cover_image}" alt="${track.title}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
             ` : `
-              <i class="fas fa-book-medical text-5xl gradient-text"></i>
-            `}
-          </div>
-          <div class="p-4">
-            <h3 class="font-bold text-lg mb-2">${track.title}</h3>
-            <p class="text-gray-400 text-sm mb-3 line-clamp-2">${track.description || ''}</p>
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-400">
-                <i class="fas fa-video mr-1"></i> ${track.total_lessons} aulas
-              </span>
-              <span class="text-purple-400 font-semibold">
-                ${track.user_progress ? Math.round(track.user_progress) + '%' : 'Iniciar'}
-              </span>
-            </div>
-            ${track.user_progress ? `
-              <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-                <div class="bg-purple-500 h-full rounded-full" style="width: ${track.user_progress}%"></div>
+              <div class="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-pink-500/20 flex items-center justify-center">
+                <i class="fas fa-book-medical text-5xl text-primary-500/50"></i>
               </div>
-            ` : ''}
+            `}
+            
+            <div class="absolute bottom-4 left-4 right-4">
+                <h3 class="font-bold text-xl text-white font-display leading-tight drop-shadow-md">${track.title}</h3>
+            </div>
+          </div>
+          
+          <div class="p-5 flex-1 flex flex-col">
+            <p class="text-theme-secondary text-sm mb-4 line-clamp-2 flex-1">${track.description || ''}</p>
+            
+            <div class="mt-auto">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="text-theme-tertiary flex items-center gap-1.5">
+                    <i class="fas fa-video"></i> ${track.total_lessons} aulas
+                  </span>
+                  <span class="font-bold text-primary-500">
+                    ${track.user_progress ? Math.round(track.user_progress) + '%' : 'Iniciar'}
+                  </span>
+                </div>
+                
+                <div class="w-full bg-theme-tertiary rounded-full h-2 overflow-hidden">
+                    <div class="bg-gradient-to-r from-primary-500 to-pink-500 h-full rounded-full transition-all duration-500" style="width: ${track.user_progress || 0}%"></div>
+                </div>
+            </div>
           </div>
         </a>
       `).join('');
     } else if (myTracksDiv) {
-      myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Nenhuma trilha encontrada</div>';
+      myTracksDiv.innerHTML = '<div class="col-span-full text-center py-16 bg-theme-secondary rounded-2xl border border-theme border-dashed text-theme-tertiary"><i class="fas fa-search text-4xl mb-4 opacity-50"></i><p>Nenhuma trilha encontrada</p></div>';
     }
     
     console.log('✅ Dashboard loaded successfully!');
@@ -93,108 +101,7 @@ async function loadDashboard() {
     // Show error message to user
     const myTracksDiv = document.getElementById('myTracks');
     if (myTracksDiv) {
-      myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-red-400">Erro ao carregar trilhas. Verifique o console.</div>';
+      myTracksDiv.innerHTML = '<div class="col-span-full text-center py-12 text-red-500 bg-red-500/10 rounded-xl border border-red-500/20">Erro ao carregar trilhas. Tente recarregar a página.</div>';
     }
-  }
-}
-
-// Track page functions
-async function loadTrack(slug) {
-  try {
-    const data = await api.get('/tracks/' + slug);
-    const { track, seasons } = data;
-    
-    const trackBreadcrumb = document.getElementById('trackBreadcrumb');
-    if (trackBreadcrumb) {
-      trackBreadcrumb.textContent = track.title;
-    }
-    
-    const trackContent = document.getElementById('trackContent');
-    if (trackContent) {
-      trackContent.innerHTML = `
-        <div class="bg-gray-800 rounded-2xl p-8 mb-8">
-          <h1 class="text-4xl font-bold mb-4">${track.title}</h1>
-          <p class="text-gray-300 text-lg mb-6">${track.description || ''}</p>
-          <div class="flex items-center space-x-6 text-sm text-gray-400">
-            <span><i class="fas fa-video mr-2"></i>${track.total_lessons} aulas</span>
-            <span><i class="fas fa-clock mr-2"></i>${Math.round(track.duration_minutes / 60)}h</span>
-          </div>
-        </div>
-        
-        <div class="space-y-4">
-          ${seasons.map((season, index) => `
-            <div class="bg-gray-800 rounded-xl overflow-hidden">
-              <button onclick="toggleSeason(${index})" class="w-full flex items-center justify-between p-6 hover:bg-gray-750 transition">
-                <div class="flex items-center space-x-4">
-                  <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">${index + 1}</div>
-                  <div class="text-left">
-                    <h3 class="text-xl font-bold">${season.title}</h3>
-                    <p class="text-sm text-gray-400">${season.lessons.length} aulas</p>
-                  </div>
-                </div>
-                <i class="fas fa-chevron-down transition-transform" id="chevron-${index}"></i>
-              </button>
-              <div id="season-${index}" class="hidden border-t border-gray-700">
-                ${season.lessons.map(lesson => `
-                  <a href="/aula/${lesson.slug}" class="flex items-center justify-between p-4 hover:bg-gray-750 transition border-b border-gray-700 last:border-0">
-                    <div class="flex items-center space-x-4">
-                      <i class="fas fa-${lesson.is_completed ? 'check-circle text-green-500' : 'play-circle text-purple-500'} text-xl"></i>
-                      <div>
-                        <h4 class="font-semibold">${lesson.title}</h4>
-                        <p class="text-sm text-gray-400">${lesson.duration_minutes} min</p>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right text-gray-600"></i>
-                  </a>
-                `).join('')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error('Track error:', error);
-  }
-}
-
-function toggleSeason(index) {
-  const seasonDiv = document.getElementById('season-' + index);
-  const chevron = document.getElementById('chevron-' + index);
-  if (seasonDiv && chevron) {
-    seasonDiv.classList.toggle('hidden');
-    chevron.classList.toggle('rotate-180');
-  }
-}
-
-// Lesson page functions
-async function loadLesson(slug) {
-  try {
-    const lesson = await api.get('/lessons/' + slug);
-    
-    document.title = lesson.title + ' | HardMedicina';
-    
-    const lessonTitle = document.getElementById('lessonTitle');
-    const lessonDescription = document.getElementById('lessonDescription');
-    const videoPlayer = document.getElementById('videoPlayer');
-    const keyPoints = document.getElementById('keyPoints');
-    const downloads = document.getElementById('downloads');
-    
-    if (lessonTitle) lessonTitle.textContent = lesson.title;
-    if (lessonDescription) lessonDescription.textContent = lesson.description || '';
-    if (videoPlayer) videoPlayer.src = lesson.video_url;
-    
-    if (keyPoints && lesson.key_points) {
-      const points = JSON.parse(lesson.key_points);
-      keyPoints.innerHTML = '<h3 class="font-bold mb-3">Pontos-chave</h3><ul class="space-y-2">' + 
-        points.map(p => '<li class="flex items-start"><i class="fas fa-check text-green-500 mr-2 mt-1"></i><span>' + p + '</span></li>').join('') + 
-        '</ul>';
-    }
-    
-    if (downloads && lesson.pdf_url) {
-      downloads.innerHTML = '<a href="' + lesson.pdf_url + '" download class="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition"><i class="fas fa-file-pdf mr-2"></i>Download PDF</a>';
-    }
-  } catch (error) {
-    console.error('Lesson error:', error);
   }
 }

@@ -12,7 +12,8 @@ async function loadTrack(slug) {
     seasons = data.seasons;
     
     // Update breadcrumb
-    document.getElementById('trackBreadcrumb').textContent = currentTrack.title;
+    const trackBreadcrumb = document.getElementById('trackBreadcrumb');
+    if(trackBreadcrumb) trackBreadcrumb.textContent = currentTrack.title;
     
     // Calculate progress
     let completedLessons = 0;
@@ -27,88 +28,104 @@ async function loadTrack(slug) {
     
     // Render track info and seasons
     document.getElementById('trackContent').innerHTML = `
-      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 mb-8 border border-gray-700">
-        <div class="flex items-start justify-between mb-6">
+      <div class="bg-gradient-to-br from-theme-secondary to-theme-tertiary rounded-3xl p-8 md:p-10 mb-10 border border-theme shadow-lg relative overflow-hidden group">
+        <div class="absolute inset-0 bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
           <div class="flex-1">
-            <h1 class="text-4xl font-bold mb-4">${currentTrack.title}</h1>
-            <p class="text-gray-300 text-lg mb-6">${currentTrack.description || ''}</p>
-            <div class="flex items-center space-x-6 text-sm text-gray-400">
-              <span><i class="fas fa-video mr-2"></i>${currentTrack.total_lessons} aulas</span>
-              <span><i class="fas fa-clock mr-2"></i>${Math.round(currentTrack.duration_minutes / 60)}h</span>
-              <span><i class="fas fa-chart-line mr-2"></i>${completedLessons}/${totalLessons} completas</span>
+            <h1 class="text-3xl md:text-5xl font-bold mb-4 font-display text-theme-primary leading-tight">${currentTrack.title}</h1>
+            <p class="text-theme-secondary text-lg mb-8 leading-relaxed max-w-3xl">${currentTrack.description || ''}</p>
+            
+            <div class="flex flex-wrap items-center gap-6 text-sm md:text-base text-theme-tertiary font-medium">
+              <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-theme-primary border border-theme"><i class="fas fa-video text-primary-500"></i> ${currentTrack.total_lessons} aulas</span>
+              <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-theme-primary border border-theme"><i class="fas fa-clock text-primary-500"></i> ${Math.round(currentTrack.duration_minutes / 60)}h</span>
+              <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-theme-primary border border-theme"><i class="fas fa-chart-line text-primary-500"></i> ${completedLessons}/${totalLessons} completas</span>
             </div>
           </div>
-        </div>
-        
-        ${progressPercent > 0 ? `
-          <div class="mt-6">
-            <div class="flex items-center justify-between text-sm mb-2">
-              <span class="text-gray-400">Seu progresso</span>
-              <span class="text-purple-400 font-semibold">${progressPercent}%</span>
-            </div>
-            <div class="w-full bg-gray-700 rounded-full h-3">
-              <div class="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-      
-      <div class="space-y-4">
-        ${seasons.map((season, seasonIndex) => `
-          <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
-            <button onclick="toggleSeason(${seasonIndex})" class="w-full flex items-center justify-between p-6 hover:bg-gray-750 transition">
-              <div class="flex items-center space-x-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center font-bold text-lg">
-                  ${seasonIndex + 1}
-                </div>
-                <div class="text-left">
-                  <h3 class="text-xl font-bold">${season.title}</h3>
-                  <p class="text-sm text-gray-400">${season.lessons.length} aula${season.lessons.length !== 1 ? 's' : ''}</p>
+          
+          ${progressPercent > 0 ? `
+            <div class="w-full md:w-64 bg-theme-primary p-5 rounded-2xl border border-theme shadow-sm">
+              <div class="flex items-center justify-between text-sm mb-3">
+                <span class="text-theme-tertiary font-medium">Seu progresso</span>
+                <span class="text-primary-500 font-bold">${progressPercent}%</span>
+              </div>
+              <div class="w-full bg-theme-tertiary rounded-full h-3 overflow-hidden">
+                <div class="bg-gradient-to-r from-primary-500 to-pink-500 h-full rounded-full transition-all duration-1000 ease-out relative" style="width: ${progressPercent}%">
+                    <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
                 </div>
               </div>
-              <i class="fas fa-chevron-down transition-transform duration-300" id="chevron-${seasonIndex}"></i>
+              <p class="text-xs text-theme-tertiary mt-3 text-center">Continue assim! 🚀</p>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      
+      <div class="space-y-6">
+        ${seasons.map((season, seasonIndex) => `
+          <div class="bg-theme-secondary rounded-2xl overflow-hidden border border-theme shadow-sm hover:shadow-md transition-shadow">
+            <button onclick="toggleSeason(${seasonIndex})" class="w-full flex items-center justify-between p-6 md:p-8 hover:bg-theme-tertiary/50 transition-colors group text-left">
+              <div class="flex items-center gap-5 md:gap-6">
+                <div class="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-primary-500 to-pink-500 rounded-2xl flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
+                  ${seasonIndex + 1}
+                </div>
+                <div>
+                  <h3 class="text-xl md:text-2xl font-bold text-theme-primary font-display mb-1">${season.title}</h3>
+                  <p class="text-sm text-theme-tertiary font-medium flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-theme-tertiary"></span>
+                    ${season.lessons.length} aula${season.lessons.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-theme-tertiary flex items-center justify-center text-theme-secondary group-hover:bg-primary-500 group-hover:text-white transition-all">
+                <i class="fas fa-chevron-down transition-transform duration-300" id="chevron-${seasonIndex}"></i>
+              </div>
             </button>
-            <div id="season-${seasonIndex}" class="hidden border-t border-gray-700">
-              ${season.lessons.map((lesson, lessonIndex) => `
-                <a href="/aula/${lesson.slug}" class="flex items-center justify-between p-5 hover:bg-gray-750 transition border-b border-gray-700 last:border-0 group">
-                  <div class="flex items-center space-x-4 flex-1">
-                    <div class="w-8 text-center">
-                      ${lesson.is_completed 
-                        ? '<i class="fas fa-check-circle text-green-500 text-xl"></i>'
-                        : '<i class="fas fa-play-circle text-purple-500 text-xl group-hover:text-purple-400"></i>'
-                      }
-                    </div>
-                    <div class="flex-1">
-                      <h4 class="font-semibold text-white group-hover:text-purple-400 transition">${lesson.title}</h4>
-                      <div class="flex items-center space-x-3 text-sm text-gray-400 mt-1">
-                        <span><i class="fas fa-clock mr-1"></i>${lesson.duration_minutes} min</span>
-                        ${lesson.is_completed ? '<span class="text-green-500"><i class="fas fa-check mr-1"></i>Concluída</span>' : ''}
+            
+            <div id="season-${seasonIndex}" class="hidden border-t border-theme bg-theme-primary/30">
+              <div class="divide-y divide-theme">
+                ${season.lessons.map((lesson, lessonIndex) => `
+                  <a href="/aula/${lesson.slug}" class="flex items-center justify-between p-5 md:p-6 hover:bg-theme-tertiary/30 transition-colors group">
+                    <div class="flex items-center gap-5 flex-1 min-w-0">
+                      <div class="w-8 flex-shrink-0 flex justify-center">
+                        ${lesson.is_completed 
+                          ? '<div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center"><i class="fas fa-check text-green-500"></i></div>'
+                          : '<div class="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500 group-hover:text-white transition-colors"><i class="fas fa-play text-primary-500 text-xs group-hover:text-white"></i></div>'
+                        }
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-theme-primary text-lg mb-1 group-hover:text-primary-500 transition-colors truncate pr-4">${lesson.title}</h4>
+                        <div class="flex items-center gap-4 text-xs md:text-sm text-theme-tertiary">
+                          <span class="flex items-center gap-1.5"><i class="fas fa-clock"></i>${lesson.duration_minutes} min</span>
+                          ${lesson.is_completed ? '<span class="text-green-500 font-medium flex items-center gap-1"><i class="fas fa-check-circle"></i> Concluída</span>' : ''}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <i class="fas fa-chevron-right text-gray-600 group-hover:text-purple-400 transition"></i>
-                </a>
-              `).join('')}
+                    <i class="fas fa-chevron-right text-theme-tertiary group-hover:text-primary-500 transition-transform group-hover:translate-x-1"></i>
+                  </a>
+                `).join('')}
+              </div>
             </div>
           </div>
         `).join('')}
       </div>
       
       ${totalLessons === 0 ? `
-        <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-          <i class="fas fa-inbox text-5xl text-gray-600 mb-4"></i>
-          <p class="text-gray-400">Esta trilha ainda não possui aulas cadastradas.</p>
+        <div class="text-center py-20 bg-theme-secondary rounded-2xl border border-theme border-dashed">
+          <div class="w-20 h-20 rounded-full bg-theme-tertiary flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-inbox text-4xl text-theme-tertiary"></i>
+          </div>
+          <h3 class="text-xl font-bold text-theme-primary mb-2">Trilha em construção</h3>
+          <p class="text-theme-secondary">Esta trilha ainda não possui aulas cadastradas.</p>
         </div>
       ` : ''}
     `;
   } catch (error) {
     console.error('❌ Error loading track:', error);
-    console.error('Error details:', error.message, error.stack);
     document.getElementById('trackContent').innerHTML = `
-      <div class="text-center py-12 bg-gray-800 rounded-xl border border-gray-700">
-        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-        <p class="text-gray-400 mb-4">Erro ao carregar trilha</p>
-        <a href="/dashboard" class="text-purple-400 hover:text-purple-300">
+      <div class="text-center py-16 bg-red-500/5 rounded-2xl border border-red-500/20">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-6"></i>
+        <h3 class="text-xl font-bold text-red-500 mb-2">Erro ao carregar trilha</h3>
+        <p class="text-theme-secondary mb-6">Não foi possível carregar o conteúdo. Tente novamente.</p>
+        <a href="/dashboard" class="btn btn-secondary text-sm">
           <i class="fas fa-arrow-left mr-2"></i>Voltar para o dashboard
         </a>
       </div>
@@ -132,26 +149,11 @@ window.toggleSeason = function(index) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Track page loaded, slug:', window.trackSlug);
-  console.log('🔧 API available?', typeof window.api !== 'undefined');
-  
   const slug = window.trackSlug;
-  if (!slug) {
-    console.error('❌ No trackSlug found!');
-    return;
-  }
+  if (!slug) return;
   
-  // Wait for API to be available
   if (typeof window.api === 'undefined') {
-    console.log('⏳ Waiting for API to load...');
-    setTimeout(() => {
-      if (typeof window.api !== 'undefined') {
-        console.log('✅ API loaded, starting track load');
-        loadTrack(slug);
-      } else {
-        console.error('❌ API still not available after 100ms');
-      }
-    }, 100);
+    setTimeout(() => { if (typeof window.api !== 'undefined') loadTrack(slug); }, 100);
   } else {
     loadTrack(slug);
   }

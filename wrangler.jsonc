@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "hardmedicina-production",
-      "database_id": "local-db-for-dev"
+      "database_id": "7d18c983-fa0e-4f07-9031-a6e9157b74e3"
     }
   ]
 }

@@ -22,19 +22,25 @@ async function loadLesson(slug) {
     
     // Update page content
     document.title = lesson.title + ' | HardMedicina';
-    document.getElementById('lessonTitle').textContent = lesson.title;
-    document.getElementById('lessonDescription').textContent = lesson.description || '';
+    const lessonTitle = document.getElementById('lessonTitle');
+    const lessonDescription = document.getElementById('lessonDescription');
+    const lessonMeta = document.getElementById('lessonMeta');
+    
+    if(lessonTitle) lessonTitle.textContent = lesson.title;
+    if(lessonDescription) lessonDescription.textContent = lesson.description || '';
     
     // Meta info
-    const metaInfo = [];
-    metaInfo.push(lesson.track_title);
-    if (lesson.season_title) metaInfo.push(lesson.season_title);
-    if (lesson.duration_minutes) metaInfo.push(lesson.duration_minutes + ' minutos');
-    document.getElementById('lessonMeta').textContent = metaInfo.join(' • ');
+    if(lessonMeta) {
+        const metaInfo = [];
+        metaInfo.push(lesson.track_title);
+        if (lesson.season_title) metaInfo.push(lesson.season_title);
+        if (lesson.duration_minutes) metaInfo.push(`<i class="fas fa-clock text-xs"></i> ${lesson.duration_minutes} min`);
+        lessonMeta.innerHTML = metaInfo.join('<span class="mx-2 text-theme-tertiary">•</span>');
+    }
     
     // Video player
     const videoPlayer = document.getElementById('videoPlayer');
-    if (lesson.video_url) {
+    if (lesson.video_url && videoPlayer) {
       // Convert YouTube URLs to embed format
       let embedUrl = lesson.video_url;
       if (lesson.video_url.includes('youtube.com/watch')) {
@@ -55,30 +61,38 @@ async function loadLesson(slug) {
     if (lesson.key_points) {
       try {
         const points = JSON.parse(lesson.key_points);
-        const keyPointsEl = document.getElementById('keyPoints');
-        keyPointsEl.innerHTML = `
-          <h3 class="font-bold text-xl mb-4"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Pontos-chave</h3>
-          <ul class="space-y-3">
-            ${points.map(p => `
-              <li class="flex items-start">
-                <i class="fas fa-check text-green-500 mr-3 mt-1"></i>
-                <span class="text-gray-300">${p}</span>
-              </li>
-            `).join('')}
-          </ul>
-        `;
+        const keyPointsEl = document.querySelector('#keyPoints .space-y-2');
+        if(keyPointsEl) {
+            keyPointsEl.innerHTML = points.map(p => `
+              <div class="flex items-start gap-3 p-3 rounded-lg bg-theme-secondary border border-theme">
+                <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <i class="fas fa-check text-green-500 text-xs"></i>
+                </div>
+                <span class="text-theme-secondary text-sm leading-relaxed">${p}</span>
+              </div>
+            `).join('');
+        }
       } catch (e) {
         console.error('Error parsing key points:', e);
       }
+    } else {
+        const keyPointsContainer = document.getElementById('keyPoints');
+        if(keyPointsContainer) keyPointsContainer.classList.add('hidden');
     }
     
     // Downloads
     if (lesson.pdf_url) {
-      document.getElementById('downloads').innerHTML = `
-        <a href="${lesson.pdf_url}" target="_blank" class="bg-red-600 px-6 py-3 rounded-lg hover:bg-red-700 transition font-semibold">
-          <i class="fas fa-file-pdf mr-2"></i>Download Material PDF
-        </a>
-      `;
+      const downloadsEl = document.getElementById('downloads');
+      if(downloadsEl) {
+          downloadsEl.innerHTML = `
+            <a href="${lesson.pdf_url}" target="_blank" class="btn bg-theme-secondary text-theme-secondary border border-theme hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2 group">
+              <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <span class="font-medium">Material de Apoio</span>
+            </a>
+          `;
+      }
     }
     
     // Update complete button state
@@ -112,36 +126,53 @@ async function loadTrackSidebar(trackId) {
     const trackData = await api.get('/tracks/' + track.slug);
     
     // Update track info
-    document.getElementById('trackTitle').textContent = trackData.track.title;
+    const trackTitleEl = document.getElementById('trackTitle');
+    const trackProgressEl = document.getElementById('trackProgress');
+    const trackProgressBar = document.getElementById('trackProgressBar');
+    
+    if(trackTitleEl) trackTitleEl.textContent = trackData.track.title;
     
     const totalLessons = trackData.track.total_lessons || 0;
     const completedLessons = trackData.track.completed_lessons || 0;
     const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
     
-    document.getElementById('trackProgress').textContent = `${completedLessons} de ${totalLessons} aulas • ${progressPercent}% concluído`;
+    if(trackProgressEl) trackProgressEl.textContent = `${completedLessons}/${totalLessons} aulas • ${progressPercent}%`;
+    if(trackProgressBar) trackProgressBar.style.width = `${progressPercent}%`;
     
     // Render seasons and lessons
     const seasonsDiv = document.getElementById('trackSeasons');
-    seasonsDiv.innerHTML = trackData.seasons.map((season, index) => `
-      <div class="border-b border-gray-700 pb-3 last:border-0">
-        <button onclick="toggleSidebarSeason(${index})" class="w-full text-left flex items-center justify-between py-2 hover:text-purple-400 transition">
-          <div>
-            <div class="font-semibold text-sm">${season.title}</div>
-            <div class="text-xs text-gray-400">${season.lessons.length} aulas</div>
+    if(seasonsDiv) {
+        seasonsDiv.innerHTML = trackData.seasons.map((season, index) => `
+          <div class="border border-theme rounded-xl overflow-hidden bg-theme-primary/30">
+            <button onclick="toggleSidebarSeason(${index})" class="w-full text-left flex items-center justify-between p-3 hover:bg-theme-tertiary transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-md bg-theme-tertiary flex items-center justify-center text-xs font-bold text-theme-secondary">${index + 1}</span>
+                <div>
+                    <div class="font-bold text-sm text-theme-primary">${season.title}</div>
+                    <div class="text-xs text-theme-tertiary">${season.lessons.length} aulas</div>
+                </div>
+              </div>
+              <i id="sidebar-chevron-${index}" class="fas fa-chevron-down text-xs text-theme-tertiary transition-transform"></i>
+            </button>
+            <div id="sidebar-season-${index}" class="hidden border-t border-theme">
+              ${season.lessons.map(lessonItem => `
+                <a href="/aula/${lessonItem.slug}" class="flex items-center gap-3 p-3 text-sm hover:bg-theme-tertiary transition-colors ${lessonItem.id === currentLesson.id ? 'bg-primary-500/10 border-l-2 border-primary-500' : 'border-l-2 border-transparent'}">
+                  <div class="flex-shrink-0">
+                      ${lessonItem.is_completed 
+                        ? '<i class="fas fa-check-circle text-green-500"></i>' 
+                        : lessonItem.id === currentLesson.id 
+                            ? '<i class="fas fa-play-circle text-primary-500"></i>'
+                            : '<i class="far fa-circle text-theme-tertiary"></i>'
+                      }
+                  </div>
+                  <span class="flex-1 truncate ${lessonItem.id === currentLesson.id ? 'text-primary-500 font-medium' : 'text-theme-secondary'}">${lessonItem.title}</span>
+                  <span class="text-xs text-theme-tertiary">${lessonItem.duration_minutes}m</span>
+                </a>
+              `).join('')}
+            </div>
           </div>
-          <i id="sidebar-chevron-${index}" class="fas fa-chevron-down text-xs transition-transform"></i>
-        </button>
-        <div id="sidebar-season-${index}" class="mt-2 space-y-1">
-          ${season.lessons.map(lessonItem => `
-            <a href="/aula/${lessonItem.slug}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-gray-700 transition ${lessonItem.id === currentLesson.id ? 'bg-purple-600/20 border-l-2 border-purple-500' : ''}">
-              <i class="fas fa-${lessonItem.is_completed ? 'check-circle text-green-500' : lessonItem.id === currentLesson.id ? 'play-circle text-purple-400' : 'circle text-gray-600'} text-xs flex-shrink-0"></i>
-              <span class="flex-1 truncate ${lessonItem.id === currentLesson.id ? 'text-purple-400 font-semibold' : ''}">${lessonItem.title}</span>
-              <span class="text-xs text-gray-500">${lessonItem.duration_minutes}min</span>
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    `).join('');
+        `).join('');
+    }
     
     // Auto-expand current season
     trackData.seasons.forEach((season, index) => {
@@ -151,10 +182,6 @@ async function loadTrackSidebar(trackId) {
         const chevron = document.getElementById('sidebar-chevron-' + index);
         if (seasonDiv) seasonDiv.classList.remove('hidden');
         if (chevron) chevron.classList.add('rotate-180');
-      } else {
-        // Collapse other seasons by default
-        const seasonDiv = document.getElementById('sidebar-season-' + index);
-        if (seasonDiv) seasonDiv.classList.add('hidden');
       }
     });
     
@@ -178,13 +205,16 @@ window.toggleSidebarSeason = function(index) {
 function updateCompleteButton(isCompleted) {
   const btn = document.getElementById('completeBtn');
   const btnText = document.getElementById('completeBtnText');
+  const icon = btn.querySelector('i');
   
   if (isCompleted) {
-    btn.className = 'bg-green-600 px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold';
-    btnText.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Concluída';
+    btn.className = 'btn w-full md:w-auto bg-green-500 text-white hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20';
+    if(btnText) btnText.textContent = 'Concluída';
+    if(icon) icon.className = 'fas fa-check-circle';
   } else {
-    btn.className = 'bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold';
-    btnText.innerHTML = '<i class="fas fa-check mr-2"></i>Marcar como concluída';
+    btn.className = 'btn w-full md:w-auto bg-theme-tertiary text-theme-secondary hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2';
+    if(btnText) btnText.textContent = 'Marcar concluída';
+    if(icon) icon.className = 'fas fa-check';
   }
 }
 
@@ -196,10 +226,11 @@ window.toggleComplete = async function() {
   
   const btn = document.getElementById('completeBtn');
   const originalHtml = btn.innerHTML;
+  const originalClass = btn.className;
   
   try {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Salvando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin animate-spin"></i> Salvando...';
     
     console.log('💾 Toggling completion status...');
     
@@ -215,21 +246,14 @@ window.toggleComplete = async function() {
       console.log('   Marked as complete');
     }
     
-    // Show success message and reload page
-    const message = !wasCompleted 
-      ? 'Aula marcada como concluída! Atualizando...' 
-      : 'Aula marcada como não concluída! Atualizando...';
-    showAlert(message, 'Sucesso', 'success');
-    
-    // Auto-refresh after 800ms to show the success message
-    setTimeout(() => {
-      window.location.reload();
-    }, 800);
+    // Reload page to refresh state properly
+    window.location.reload();
     
   } catch (error) {
     console.error('❌ Error toggling completion:', error);
     showAlert('Erro ao atualizar progresso. Tente novamente.', 'Erro', 'error');
     btn.innerHTML = originalHtml;
+    btn.className = originalClass;
     btn.disabled = false;
   }
 }

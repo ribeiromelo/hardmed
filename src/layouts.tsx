@@ -3,305 +3,346 @@ import { html } from 'hono/html';
 interface BaseLayoutProps {
   title: string;
   children: any;
-  user?: { id: number; name: string; role: string };
+  user?: { id: number; name: string; role: string; avatar_url?: string };
 }
 
 export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} | HardMedicina</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Tailwind (Utility only) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-        
-        .neon-glow {
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-        }
-        
-        .hero-animated {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            animation: gradient 15s ease infinite;
-            background-size: 400% 400%;
-        }
-        
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .scrollbar-hidden::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .scrollbar-hidden {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        
-        /* Custom scrollbar for sidebar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1f2937;
-            border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-    </style>
+    
+    <!-- Custom Design System -->
+    <link href="/static/styles.css" rel="stylesheet">
+    
+    <script>
+        // Prevent FOUC (Flash of Unstyled Content)
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-theme-primary text-theme-primary flex flex-col min-h-screen">
     ${children}
     
-    <!-- Native Fetch API helper (NO AXIOS DEPENDENCY) -->
+    <!-- Scripts -->
     <script src="/static/api.js"></script>
     <script src="/static/auth.js"></script>
     <script src="/static/modal-utils.js"></script>
     ${user ? html`<script src="/static/notifications.js"></script>` : ''}
+    
+    <script>
+        // Global Theme Toggle Logic
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            
+            updateThemeIcon(next);
+        }
+        
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+        
+        // Initialize Icon
+        document.addEventListener('DOMContentLoaded', () => {
+            updateThemeIcon(localStorage.getItem('theme') || 'dark');
+        });
+
+        // Mobile Menu Logic
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
 </body>
 </html>
 `;
 
 interface HeaderProps {
-  user?: { id: number; name: string; role: string };
+  user?: { id: number; name: string; role: string; avatar_url?: string };
   showSearch?: boolean;
 }
 
 export const Header = ({ user, showSearch = false }: HeaderProps) => html`
-<header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
-    <div class="container mx-auto px-4 py-4">
+<header class="bg-theme-secondary border-b border-theme sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+    <div class="container mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-8">
-                <a href="${user ? '/dashboard' : '/'}" class="flex items-center space-x-2">
-                    <i class="fas fa-graduation-cap text-2xl gradient-text"></i>
-                    <span class="text-xl font-bold">HardMedicina</span>
+            
+            <!-- Logo area -->
+            <div class="flex items-center space-x-6">
+                <a href="${user ? '/dashboard' : '/'}" class="flex items-center space-x-2 group">
+                    <div class="w-9 h-9 bg-indigo-600 rounded flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
+                        <i class="fas fa-graduation-cap text-lg"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight hidden sm:block">
+                        Hard<span class="text-indigo-500">Medicina</span>
+                    </span>
                 </a>
                 
+                <!-- Desktop Nav -->
                 ${user ? html`
-                <nav class="hidden md:flex space-x-6">
-                    <a href="/dashboard" class="hover:text-purple-400 transition">Dashboard</a>
-                    <a href="/trilhas" class="hover:text-purple-400 transition">Trilhas</a>
+                <nav class="hidden md:flex space-x-1">
+                    <a href="/dashboard" class="px-4 py-2 rounded-lg hover:bg-theme-tertiary transition text-sm font-medium">Dashboard</a>
+                    <a href="/trilhas" class="px-4 py-2 rounded-lg hover:bg-theme-tertiary transition text-sm font-medium">Trilhas</a>
                     ${user.role === 'admin' ? html`
-                        <a href="/admin" class="hover:text-purple-400 transition">Admin</a>
+                        <a href="/admin" class="px-3 py-2 rounded-md hover:bg-theme-tertiary transition text-sm font-medium text-indigo-500">Admin</a>
                     ` : ''}
                 </nav>
                 ` : html`
-                <nav class="hidden md:flex space-x-6">
-                    <a href="/#cardiologia" class="hover:text-purple-400 transition">Cardiologia</a>
-                    <a href="/#nefrologia" class="hover:text-purple-400 transition">Nefrologia</a>
-                    <a href="/#clinica" class="hover:text-purple-400 transition">Clínica</a>
-                    <a href="/#cirurgia" class="hover:text-purple-400 transition">Cirurgia</a>
+                <nav class="hidden md:flex space-x-1">
+                    <a href="/#cardiologia" class="px-3 py-2 rounded-lg hover:bg-theme-tertiary transition text-sm">Cardiologia</a>
+                    <a href="/#nefrologia" class="px-3 py-2 rounded-lg hover:bg-theme-tertiary transition text-sm">Nefrologia</a>
+                    <a href="/#clinica" class="px-3 py-2 rounded-lg hover:bg-theme-tertiary transition text-sm">Clínica</a>
                 </nav>
                 `}
             </div>
             
-            ${showSearch ? html`
-            <div class="flex-1 max-w-2xl mx-8">
-                <div class="relative">
+            <!-- Actions Area -->
+            <div class="flex items-center space-x-3 md:space-x-4">
+                
+                <!-- Search (Desktop) -->
+                ${showSearch ? html`
+                <div class="hidden md:block relative w-64">
                     <input 
                         type="text" 
-                        placeholder="Buscar aulas, trilhas..."
-                        class="w-full bg-gray-700 text-white px-4 py-2 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Buscar..."
+                        class="input-field py-2 pl-9 text-sm rounded-full"
                     />
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <i class="fas fa-search absolute left-3 top-2.5 text-text-tertiary text-xs"></i>
                 </div>
-            </div>
-            ` : ''}
-            
-            <div class="flex items-center space-x-4">
+                ` : ''}
+
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition text-text-secondary">
+                    <i id="themeIcon" class="fas fa-sun"></i>
+                </button>
+                
                 ${user ? html`
+                    <!-- Notifications -->
                     <div class="relative">
-                        <button id="notificationsButton" onclick="toggleNotifications()" class="relative hover:text-purple-400 transition">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                        <button id="notificationsButton" onclick="toggleNotifications()" class="w-9 h-9 rounded-full bg-theme-tertiary flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition relative">
+                            <i class="fas fa-bell"></i>
+                            <span id="notificationBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm border-2 border-theme">0</span>
                         </button>
                         
-                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-96 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 max-h-[500px] flex flex-col">
-                            <div class="p-4 border-b border-gray-700 flex items-center justify-between">
-                                <h3 class="font-bold">Notificações</h3>
-                                <button onclick="markAllAsRead()" class="text-xs text-purple-400 hover:text-purple-300">
+                        <!-- Dropdown -->
+                        <div id="notificationsDropdown" class="hidden absolute right-0 mt-3 w-80 md:w-96 card z-50 max-h-[500px] flex flex-col shadow-xl animate-in slide-in-from-top-2">
+                            <div class="p-4 border-b border-theme flex items-center justify-between bg-theme-secondary rounded-t-xl">
+                                <h3 class="font-bold text-sm">Notificações</h3>
+                                <button onclick="markAllAsRead()" class="text-xs text-purple-500 hover:text-purple-600 font-medium">
                                     Marcar todas como lidas
                                 </button>
                             </div>
-                            <div id="notificationsList" class="overflow-y-auto flex-1 custom-scrollbar">
-                                <div class="text-center py-8 text-gray-400">
+                            <div id="notificationsList" class="overflow-y-auto flex-1 custom-scrollbar max-h-96">
+                                <div class="text-center py-12 text-text-tertiary">
                                     <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                    <p>Carregando...</p>
+                                    <p class="text-sm">Carregando...</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
+                    <!-- User Menu -->
                     <div class="relative">
-                        <button id="userMenuButton" onclick="toggleUserMenu()" class="flex items-center space-x-2 hover:text-purple-400 transition p-2 rounded-lg hover:bg-gray-700/50">
-                            <img src="${user.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)}" 
+                        <button id="userMenuButton" onclick="toggleUserMenu()" class="flex items-center space-x-2 pl-2 hover:opacity-80 transition">
+                            <img src="${user.avatar_url || 'https://ui-avatars.com/api/?background=7c3aed&color=fff&name=' + encodeURIComponent(user.name)}" 
                                  alt="${user.name}" 
-                                 class="w-8 h-8 rounded-full"
+                                 class="w-9 h-9 rounded-full border-2 border-theme shadow-sm"
                             />
-                            <span class="hidden md:inline">${user.name}</span>
-                            <i id="userMenuChevron" class="fas fa-chevron-down text-sm transition-transform"></i>
                         </button>
                         
-                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-700 z-50">
-                            <div class="px-4 py-3 border-b border-gray-700">
-                                <p class="text-sm font-semibold">${user.name}</p>
-                                <p class="text-xs text-gray-400 truncate">${user.email}</p>
+                        <div id="userMenuDropdown" class="hidden absolute right-0 mt-3 w-56 card shadow-xl py-2 z-50 animate-in slide-in-from-top-2">
+                            <div class="px-4 py-3 border-b border-theme bg-theme-tertiary/30">
+                                <p class="text-sm font-semibold truncate">${user.name}</p>
+                                <p class="text-xs text-text-tertiary truncate">${user.role === 'admin' ? 'Administrador' : 'Estudante'}</p>
                             </div>
-                            <a href="/perfil" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
-                                <i class="fas fa-user w-5 mr-3 text-purple-400"></i> 
-                                <span>Meu Perfil</span>
-                            </a>
-                            ${user.role === 'admin' ? html`
-                            <a href="/admin" class="flex items-center px-4 py-3 hover:bg-gray-700 transition">
-                                <i class="fas fa-cog w-5 mr-3 text-yellow-400"></i> 
-                                <span>Painel de Controle</span>
-                            </a>
-                            ` : ''}
-                            <hr class="my-2 border-gray-700" />
-                            <button onclick="logout()" class="flex items-center w-full text-left px-4 py-3 hover:bg-gray-700 transition text-red-400">
-                                <i class="fas fa-sign-out-alt w-5 mr-3"></i> 
-                                <span>Sair</span>
-                            </button>
+                            
+                            <div class="p-1">
+                                <a href="/perfil" class="flex items-center px-3 py-2 rounded-md hover:bg-theme-tertiary transition text-sm">
+                                    <i class="fas fa-user w-6 text-center text-text-secondary"></i> 
+                                    <span>Meu Perfil</span>
+                                </a>
+                                
+                                ${user.role === 'admin' ? html`
+                                <a href="/admin" class="flex items-center px-3 py-2 rounded-md hover:bg-theme-tertiary transition text-sm">
+                                    <i class="fas fa-gauge-high w-6 text-center text-text-secondary"></i> 
+                                    <span>Painel Admin</span>
+                                </a>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="border-t border-theme my-1"></div>
+                            
+                            <div class="p-1">
+                                <button onclick="logout()" class="flex w-full items-center px-3 py-2 rounded-md hover:bg-red-500/10 hover:text-red-500 transition text-sm text-text-secondary">
+                                    <i class="fas fa-sign-out-alt w-6 text-center"></i> 
+                                    <span>Sair</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ` : html`
-                    <a href="/login" class="hover:text-purple-400 transition">Entrar</a>
-                    <a href="/cadastro" class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold">
-                        Começar
-                    </a>
+                    <div class="hidden md:flex items-center space-x-3">
+                        <a href="/login" class="px-4 py-2 text-sm font-medium hover:text-purple-500 transition">Entrar</a>
+                        <a href="/cadastro" class="btn btn-primary text-sm py-2 px-5">
+                            Começar
+                        </a>
+                    </div>
                 `}
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-theme-tertiary transition">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenu" class="hidden md:hidden absolute top-full left-0 w-full bg-theme-secondary border-b border-theme shadow-xl animate-in slide-in-from-top-5">
+        <div class="p-4 space-y-3">
+            ${showSearch ? html`
+            <div class="relative w-full mb-4">
+                <input type="text" placeholder="Buscar..." class="input-field py-2" />
+                <i class="fas fa-search absolute right-3 top-3 text-text-tertiary"></i>
+            </div>
+            ` : ''}
+
+            ${user ? html`
+                <a href="/dashboard" class="block px-4 py-3 rounded-lg hover:bg-theme-tertiary font-medium">
+                    <i class="fas fa-home w-6 text-center mr-2 text-purple-500"></i> Dashboard
+                </a>
+                <a href="/trilhas" class="block px-4 py-3 rounded-lg hover:bg-theme-tertiary font-medium">
+                    <i class="fas fa-layer-group w-6 text-center mr-2 text-blue-500"></i> Trilhas
+                </a>
+                <a href="/perfil" class="block px-4 py-3 rounded-lg hover:bg-theme-tertiary font-medium">
+                    <i class="fas fa-user w-6 text-center mr-2 text-pink-500"></i> Meu Perfil
+                </a>
+                <button onclick="logout()" class="w-full text-left block px-4 py-3 rounded-lg hover:bg-red-500/10 text-red-500 font-medium">
+                    <i class="fas fa-sign-out-alt w-6 text-center mr-2"></i> Sair da conta
+                </button>
+            ` : html`
+                <a href="/login" class="block px-4 py-3 rounded-lg hover:bg-theme-tertiary font-medium">Entrar</a>
+                <a href="/cadastro" class="block px-4 py-3 rounded-lg bg-indigo-600 text-white font-medium text-center">Criar Conta Grátis</a>
+            `}
         </div>
     </div>
 </header>
 
 ${user ? html`
 <script>
-    // Logout function
     function logout() {
         document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
     }
     
-    // User menu dropdown
+    // Dropdown Toggles (Generic)
     window.toggleUserMenu = function() {
         const dropdown = document.getElementById('userMenuDropdown');
-        const chevron = document.getElementById('userMenuChevron');
-        const isHidden = dropdown.classList.contains('hidden');
+        dropdown.classList.toggle('hidden');
         
-        if (isHidden) {
-            dropdown.classList.remove('hidden');
-            chevron.classList.add('rotate-180');
-            
-            // Add backdrop click listener
-            setTimeout(() => {
-                document.addEventListener('click', closeUserMenuOnClickOutside);
-            }, 100);
-        } else {
-            dropdown.classList.add('hidden');
-            chevron.classList.remove('rotate-180');
-            document.removeEventListener('click', closeUserMenuOnClickOutside);
-        }
+        // Close others
+        document.getElementById('notificationsDropdown')?.classList.add('hidden');
     }
     
-    function closeUserMenuOnClickOutside(event) {
-        const dropdown = document.getElementById('userMenuDropdown');
-        const button = document.getElementById('userMenuButton');
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+        const menuBtn = document.getElementById('userMenuButton');
+        const menuDrop = document.getElementById('userMenuDropdown');
+        const notifBtn = document.getElementById('notificationsButton');
+        const notifDrop = document.getElementById('notificationsDropdown');
         
-        if (!dropdown.contains(event.target) && !button.contains(event.target)) {
-            dropdown.classList.add('hidden');
-            document.getElementById('userMenuChevron').classList.remove('rotate-180');
-            document.removeEventListener('click', closeUserMenuOnClickOutside);
+        if (menuDrop && !menuDrop.classList.contains('hidden') && !menuBtn.contains(e.target) && !menuDrop.contains(e.target)) {
+            menuDrop.classList.add('hidden');
         }
-    }
+        
+        if (notifDrop && !notifDrop.classList.contains('hidden') && !notifBtn.contains(e.target) && !notifDrop.contains(e.target)) {
+            notifDrop.classList.add('hidden');
+        }
+    });
 </script>
 ` : ''}
 `;
 
 export const Footer = () => html`
-<footer class="bg-gray-800 border-t border-gray-700 mt-20">
-    <div class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-                <div class="flex items-center space-x-2 mb-4">
-                    <i class="fas fa-graduation-cap text-2xl gradient-text"></i>
-                    <span class="text-xl font-bold">HardMedicina</span>
+<footer class="bg-theme-secondary border-t border-theme mt-auto">
+    <div class="container mx-auto px-4 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            <!-- Brand -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white">
+                        <i class="fas fa-graduation-cap text-sm"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight">HardMedicina</span>
                 </div>
-                <p class="text-gray-400 text-sm">
-                    Plataforma educacional médica com trilhas organizadas por especialidade.
+                <p class="text-text-secondary text-sm leading-relaxed">
+                    A plataforma definitiva para estudantes de medicina. Aprenda com casos clínicos reais e trilhas estruturadas.
                 </p>
-            </div>
-            
-            <div>
-                <h3 class="font-bold mb-4">Especialidades</h3>
-                <ul class="space-y-2 text-sm text-gray-400">
-                    <li><a href="/#cardiologia" class="hover:text-purple-400 transition">Cardiologia</a></li>
-                    <li><a href="/#nefrologia" class="hover:text-purple-400 transition">Nefrologia</a></li>
-                    <li><a href="/#clinica" class="hover:text-purple-400 transition">Clínica Médica</a></li>
-                    <li><a href="/#cirurgia" class="hover:text-purple-400 transition">Cirurgia</a></li>
-                </ul>
-            </div>
-            
-            <div>
-                <h3 class="font-bold mb-4">Suporte</h3>
-                <ul class="space-y-2 text-sm text-gray-400">
-                    <li><a href="/ajuda" class="hover:text-purple-400 transition">Central de Ajuda</a></li>
-                    <li><a href="/contato" class="hover:text-purple-400 transition">Contato</a></li>
-                    <li><a href="/termos" class="hover:text-purple-400 transition">Termos de Uso</a></li>
-                    <li><a href="/privacidade" class="hover:text-purple-400 transition">Privacidade</a></li>
-                </ul>
-            </div>
-            
-            <div>
-                <h3 class="font-bold mb-4">Redes Sociais</h3>
-                <div class="flex space-x-4">
-                    <a href="#" class="text-2xl hover:text-purple-400 transition"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="text-2xl hover:text-purple-400 transition"><i class="fab fa-youtube"></i></a>
-                    <a href="#" class="text-2xl hover:text-purple-400 transition"><i class="fab fa-telegram"></i></a>
+                <div class="flex space-x-4 pt-2">
+                    <a href="#" class="w-8 h-8 rounded-full bg-theme-tertiary flex items-center justify-center text-text-secondary hover:bg-purple-500 hover:text-white transition">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-theme-tertiary flex items-center justify-center text-text-secondary hover:bg-red-500 hover:text-white transition">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-theme-tertiary flex items-center justify-center text-text-secondary hover:bg-blue-500 hover:text-white transition">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
                 </div>
+            </div>
+            
+            <!-- Links -->
+            <div>
+                <h4 class="font-bold mb-6 text-text-primary">Plataforma</h4>
+                <ul class="space-y-3 text-sm text-text-secondary">
+                    <li><a href="/trilhas" class="hover:text-purple-500 transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 opacity-50"></i> Trilhas</a></li>
+                    <li><a href="/aulas" class="hover:text-purple-500 transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 opacity-50"></i> Aulas</a></li>
+                    <li><a href="/precos" class="hover:text-purple-500 transition flex items-center"><i class="fas fa-chevron-right text-xs mr-2 opacity-50"></i> Planos</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold mb-6 text-text-primary">Legal</h4>
+                <ul class="space-y-3 text-sm text-text-secondary">
+                    <li><a href="/termos" class="hover:text-purple-500 transition">Termos de Uso</a></li>
+                    <li><a href="/privacidade" class="hover:text-purple-500 transition">Política de Privacidade</a></li>
+                    <li><a href="/cookies" class="hover:text-purple-500 transition">Cookies</a></li>
+                </ul>
+            </div>
+            
+            <!-- Newsletter -->
+            <div>
+                <h4 class="font-bold mb-6 text-text-primary">Novidades</h4>
+                <p class="text-sm text-text-secondary mb-4">Receba casos clínicos semanais no seu e-mail.</p>
+                <form class="space-y-2">
+                    <input type="email" placeholder="seu@email.com" class="input-field py-2 text-sm" />
+                    <button class="btn btn-primary w-full py-2 text-sm">Inscrever-se</button>
+                </form>
             </div>
         </div>
         
-        <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2025 HardMedicina. Todos os direitos reservados.</p>
+        <div class="border-t border-theme mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-text-tertiary">
+            <p>&copy; 2025 HardMedicina Ltda.</p>
+            <p class="mt-2 md:mt-0 flex items-center">
+                Feito com <i class="fas fa-heart text-red-500 mx-1"></i> para médicos.
+            </p>
         </div>
     </div>
 </footer>
