@@ -1,3 +1,4 @@
+import { AppHeader, AppFooter } from './app-layout';
 import { html } from 'hono/html';
 
 interface BaseLayoutProps {
@@ -8,35 +9,40 @@ interface BaseLayoutProps {
 
 export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="${user ? 'light' : 'dark'}" data-app="${user ? 'authenticated' : 'public'}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} | HardMedicina</title>
     
+    <script src="/static/security-ui.js"></script>
     <!-- Fonts & Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Tailwind (Utility only) -->
+    ${user ? html`
+    <link href="/static/app-utilities.css" rel="stylesheet">
+    <link href="/static/app.css" rel="stylesheet">
+    ` : html`
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Custom Design System -->
     <link href="/static/styles.css" rel="stylesheet">
+    `}
     
     <script>
         // Prevent FOUC (Flash of Unstyled Content)
-        const savedTheme = localStorage.getItem('theme') || 'dark';
+        const appMode = document.documentElement.dataset.app === 'authenticated';
+        let savedTheme = appMode ? 'light' : 'dark';
+        try { savedTheme = localStorage.getItem(appMode ? 'hardmed-app-theme' : 'theme') || savedTheme; } catch {}
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
 </head>
-<body class="bg-theme-primary text-theme-primary flex flex-col min-h-screen">
+<body class="${user ? 'app-shell' : ''} bg-theme-primary text-theme-primary flex flex-col min-h-screen">
     ${children}
     
     <!-- Scripts -->
     <script src="/static/api.js"></script>
     <script src="/static/auth.js"></script>
     <script src="/static/modal-utils.js"></script>
-    ${user ? html`<script src="/static/notifications.js"></script>` : ''}
+    ${user ? html`<script src="/static/notifications.js"></script><script src="/static/app-ui.js"></script>` : ''}
     
     <script>
         // Global Theme Toggle Logic
@@ -46,7 +52,7 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
             const next = current === 'dark' ? 'light' : 'dark';
             
             html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
+            try { localStorage.setItem(document.documentElement.dataset.app === 'authenticated' ? 'hardmed-app-theme' : 'theme', next); } catch {}
             
             updateThemeIcon(next);
         }
@@ -60,13 +66,14 @@ export const BaseLayout = ({ title, children, user }: BaseLayoutProps) => html`
         
         // Initialize Icon
         document.addEventListener('DOMContentLoaded', () => {
-            updateThemeIcon(localStorage.getItem('theme') || 'dark');
+            updateThemeIcon(document.documentElement.getAttribute('data-theme'));
         });
 
         // Mobile Menu Logic
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
+            const isOpen = !menu.classList.toggle('hidden');
+            document.getElementById('appMenuButton')?.setAttribute('aria-expanded', String(isOpen));
         }
     </script>
 </body>
@@ -78,7 +85,7 @@ interface HeaderProps {
   showSearch?: boolean;
 }
 
-export const Header = ({ user, showSearch = false }: HeaderProps) => html`
+export const Header = ({ user, showSearch = false }: HeaderProps) => user ? AppHeader({ user }) : html`
 <header class="bg-theme-secondary border-b border-theme sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
     <div class="container mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
@@ -246,12 +253,6 @@ export const Header = ({ user, showSearch = false }: HeaderProps) => html`
 
 ${user ? html`
 <script>
-    function logout() {
-        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC';
-        localStorage.removeItem('auth_token');
-        window.location.href = '/login';
-    }
-    
     // Dropdown Toggles (Generic)
     window.toggleUserMenu = function() {
         const dropdown = document.getElementById('userMenuDropdown');
@@ -280,7 +281,7 @@ ${user ? html`
 ` : ''}
 `;
 
-export const Footer = () => html`
+export const Footer = ({ user }: { user?: BaseLayoutProps['user'] } = {}) => user ? AppFooter() : html`
 <footer class="bg-theme-secondary border-t border-theme mt-auto">
     <div class="container mx-auto px-4 py-12">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">

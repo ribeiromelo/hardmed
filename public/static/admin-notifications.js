@@ -27,8 +27,8 @@ function renderNotifications() {
     container.innerHTML = `
       <div class="text-center py-12">
         <i class="fas fa-bell-slash text-5xl text-gray-600 mb-4"></i>
-        <p class="text-gray-400 text-lg">Nenhuma notificação criada ainda</p>
-        <button onclick="openCreateModal()" class="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+        <p class="text-theme-secondary text-lg">Nenhuma notificação criada ainda</p>
+        <button onclick="openCreateModal()" class="btn btn-primary mt-4">
           <i class="fas fa-plus mr-2"></i>Criar primeira notificação
         </button>
       </div>
@@ -40,7 +40,7 @@ function renderNotifications() {
     <div class="overflow-x-auto">
       <table class="w-full">
         <thead>
-          <tr class="border-b border-gray-700">
+          <tr class="border-b border-theme">
             <th class="text-left py-3 px-4">Status</th>
             <th class="text-left py-3 px-4">Tipo</th>
             <th class="text-left py-3 px-4">Título</th>
@@ -52,24 +52,24 @@ function renderNotifications() {
         </thead>
         <tbody>
           ${notifications.map(notification => `
-            <tr class="border-b border-gray-700 hover:bg-gray-750">
+            <tr class="border-b border-theme hover:bg-gray-750">
               <td class="py-3 px-4">
                 ${notification.is_active ? 
-                  '<span class="px-2 py-1 bg-green-600 text-xs rounded">Ativa</span>' : 
-                  '<span class="px-2 py-1 bg-gray-600 text-xs rounded">Inativa</span>'
+                  '<span class="px-2 py-1 bg-green-700 text-white text-xs rounded">Ativa</span>' :
+                  '<span class="px-2 py-1 bg-theme-tertiary text-xs rounded">Inativa</span>'
                 }
               </td>
               <td class="py-3 px-4">
                 ${getTypeLabel(notification.type)}
               </td>
               <td class="py-3 px-4 font-medium">${escapeHtml(notification.title)}</td>
-              <td class="py-3 px-4 text-sm text-gray-400 max-w-md truncate">${escapeHtml(notification.message)}</td>
-              <td class="py-3 px-4 text-sm text-gray-400">${formatDate(notification.created_at)}</td>
-              <td class="py-3 px-4 text-sm text-gray-400">
+              <td class="py-3 px-4 text-sm text-theme-secondary max-w-md truncate">${escapeHtml(notification.message)}</td>
+              <td class="py-3 px-4 text-sm text-theme-secondary">${formatDate(notification.created_at)}</td>
+              <td class="py-3 px-4 text-sm text-theme-secondary">
                 ${notification.expires_at ? formatDate(notification.expires_at) : 'Nunca'}
               </td>
               <td class="py-3 px-4 text-right">
-                <button onclick="toggleActive(${notification.id}, ${notification.is_active})" class="text-blue-400 hover:text-blue-300 mr-3" title="Ativar/Desativar">
+                <button onclick="toggleActive(${notification.id}, ${Number(notification.is_active) === 1 ? 1 : 0})" class="text-blue-400 hover:text-blue-300 mr-3" title="Ativar/Desativar">
                   <i class="fas ${notification.is_active ? 'fa-eye-slash' : 'fa-eye'}"></i>
                 </button>
                 <button onclick="editNotification(${notification.id})" class="text-yellow-400 hover:text-yellow-300 mr-3" title="Editar">
@@ -216,10 +216,10 @@ window.toggleActive = async function(id, currentStatus) {
 
 function getTypeLabel(type) {
   const types = {
-    info: '<span class="px-2 py-1 bg-blue-600 text-xs rounded"><i class="fas fa-info-circle mr-1"></i>Info</span>',
-    success: '<span class="px-2 py-1 bg-green-600 text-xs rounded"><i class="fas fa-check-circle mr-1"></i>Sucesso</span>',
-    warning: '<span class="px-2 py-1 bg-yellow-600 text-xs rounded"><i class="fas fa-exclamation-triangle mr-1"></i>Aviso</span>',
-    error: '<span class="px-2 py-1 bg-red-600 text-xs rounded"><i class="fas fa-times-circle mr-1"></i>Erro</span>'
+    info: '<span class="px-2 py-1 bg-blue-700 text-white text-xs rounded"><i class="fas fa-info-circle mr-1"></i>Info</span>',
+    success: '<span class="px-2 py-1 bg-green-700 text-white text-xs rounded"><i class="fas fa-check-circle mr-1"></i>Sucesso</span>',
+    warning: '<span class="px-2 py-1 bg-yellow-700 text-white text-xs rounded"><i class="fas fa-exclamation-triangle mr-1"></i>Aviso</span>',
+    error: '<span class="px-2 py-1 bg-red-700 text-white text-xs rounded"><i class="fas fa-times-circle mr-1"></i>Erro</span>'
   };
   return types[type] || types.info;
 }

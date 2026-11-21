@@ -20,16 +20,16 @@ async function loadUsers() {
     }
     
     tbody.innerHTML = users.map(user => `
-      <tr class="border-b border-gray-700 hover:bg-gray-750">
-        <td class="py-3 px-4">${user.name}</td>
-        <td class="py-3 px-4">${user.email}</td>
+      <tr class="border-b border-theme hover:bg-gray-750">
+        <td class="py-3 px-4">${uiSecurity.escape(user.name)}</td>
+        <td class="py-3 px-4">${uiSecurity.escape(user.email)}</td>
         <td class="py-3 px-4">
-          <span class="text-xs bg-${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
-            ${user.role}
+          <span class="text-xs ${user.role === 'admin' ? 'bg-navy-600 text-white' : 'bg-theme-tertiary text-theme-primary'} px-2 py-1 rounded">
+            ${uiSecurity.escape(user.role)}
           </span>
         </td>
         <td class="py-3 px-4">${Math.round(user.avg_progress || 0)}%</td>
-        <td class="py-3 px-4 text-sm text-gray-400">
+        <td class="py-3 px-4 text-sm text-theme-secondary">
           ${user.last_access ? new Date(user.last_access).toLocaleDateString('pt-BR') : 'Nunca'}
         </td>
         <td class="py-3 px-4">

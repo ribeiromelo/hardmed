@@ -1,5 +1,9 @@
 # HardMedicina - Trilhas
 
+> **Atualização de 21/11/2026:** área logada redesenhada ([design e validação](docs/DESIGN_SYSTEM.md)); autenticação, sessões e vulnerabilidades corrigidas ([relatório atual](docs/SECURITY_FINDINGS.md)). `npm test`: 19 aprovados; `npm audit`: zero vulnerabilidades conhecidas. As aprovações abaixo são históricas. Antes de publicar, aplicar `0003_secure_sessions.sql`, garantir acesso administrativo e autenticar a CLI Cloudflare. Nenhum deploy foi executado nesta rodada.
+
+**Desenvolvimento local:** copiar `.dev.vars.example` para `.dev.vars` apenas para usar as contas do seed local. Não configurar `ALLOW_DEMO_LOGIN` na Cloudflare. `npm run dev` agora compila e inicia o Wrangler, seguindo o mesmo runtime de `dev:sandbox`. Os testes usam Node 22+ com SQLite em memória.
+
 > Sistema educacional médico tipo "Netflix de aulas médicas", com trilhas organizadas por especialidade, vídeos, PDFs e módulos, acessível por login e com painel administrativo para gerenciamento de conteúdos.
 
 ## 🚀 URLs do Projeto

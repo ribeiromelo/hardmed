@@ -23,7 +23,7 @@ async function loadInitialData() {
     const filterSelect = document.getElementById('filterTrack');
     if (filterSelect) {
       filterSelect.innerHTML = '<option value="">Todas as trilhas</option>' +
-        allTracks.map(track => `<option value="${track.id}">${track.title}</option>`).join('');
+        allTracks.map(track => `<option value="${track.id}">${uiSecurity.escape(track.title)}</option>`).join('');
       
       filterSelect.addEventListener('change', (e) => {
         currentTrackFilter = e.target.value;
@@ -35,7 +35,7 @@ async function loadInitialData() {
     const trackSelect = document.getElementById('lessonTrack');
     if (trackSelect) {
       trackSelect.innerHTML = '<option value="">Selecione uma trilha</option>' +
-        allTracks.map(track => `<option value="${track.id}">${track.title}</option>`).join('');
+        allTracks.map(track => `<option value="${track.id}">${uiSecurity.escape(track.title)}</option>`).join('');
       
       trackSelect.addEventListener('change', async (e) => {
         await loadSeasons(e.target.value);
@@ -67,7 +67,7 @@ async function loadSeasons(trackId) {
     
     allSeasons = seasons;
     seasonSelect.innerHTML = '<option value="">Selecione uma temporada</option>' +
-      seasons.map(season => `<option value="${season.id}">${season.title}</option>`).join('');
+      seasons.map(season => `<option value="${season.id}">${uiSecurity.escape(season.title)}</option>`).join('');
     seasonSelect.disabled = false;
     
   } catch (error) {
@@ -93,14 +93,14 @@ async function loadLessons() {
     }
     
     if (allLessons.length === 0) {
-      table.innerHTML = '<p class="text-center text-gray-400 py-12">Nenhuma aula cadastrada. Clique em "Nova Aula" para começar.</p>';
+      table.innerHTML = '<p class="text-center text-theme-secondary py-12">Nenhuma aula cadastrada. Clique em "Nova Aula" para começar.</p>';
       return;
     }
     
     table.innerHTML = `
       <div class="overflow-x-auto">
         <table class="w-full">
-          <thead class="border-b border-gray-700">
+          <thead class="border-b border-theme">
             <tr>
               <th class="text-left py-3 px-4">ID</th>
               <th class="text-left py-3 px-4">Título</th>
@@ -112,17 +112,17 @@ async function loadLessons() {
           </thead>
           <tbody>
             ${allLessons.map(lesson => `
-              <tr class="border-b border-gray-700 hover:bg-gray-750">
+              <tr class="border-b border-theme hover:bg-gray-750">
                 <td class="py-3 px-4">#${lesson.id}</td>
-                <td class="py-3 px-4 font-semibold">${lesson.title}</td>
-                <td class="py-3 px-4 text-sm text-gray-400">${lesson.track_title}</td>
-                <td class="py-3 px-4 text-sm text-gray-400">${lesson.season_title}</td>
+                <td class="py-3 px-4 font-semibold">${uiSecurity.escape(lesson.title)}</td>
+                <td class="py-3 px-4 text-sm text-theme-secondary">${uiSecurity.escape(lesson.track_title)}</td>
+                <td class="py-3 px-4 text-sm text-theme-secondary">${uiSecurity.escape(lesson.season_title)}</td>
                 <td class="py-3 px-4">${lesson.duration_minutes || 0} min</td>
                 <td class="py-3 px-4">
                   <button onclick="editLesson(${lesson.id})" class="text-blue-400 hover:text-blue-300 mr-3" title="Editar">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button onclick="deleteLesson(${lesson.id}, '${lesson.title.replace(/'/g, "\\'")}'))" class="text-red-400 hover:text-red-300" title="Deletar">
+                  <button onclick="deleteLesson(${lesson.id})" class="text-red-400 hover:text-red-300" title="Deletar">
                     <i class="fas fa-trash"></i>
                   </button>
                 </td>
@@ -212,7 +212,7 @@ async function editLesson(id) {
 
 async function deleteLesson(id, title) {
   const confirmed = await showConfirm(
-    `Tem certeza que deseja excluir a aula "${title}"?\n\nEsta ação não pode ser desfeita.`,
+    `Tem certeza que deseja excluir a aula selecionada?\n\nEsta ação não pode ser desfeita.`,
     'Confirmar Exclusão',
     { confirmText: 'Excluir', cancelText: 'Cancelar', dangerous: true }
   );

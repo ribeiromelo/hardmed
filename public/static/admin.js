@@ -25,13 +25,13 @@ async function loadAdminStats() {
     const recentUsersDiv = document.getElementById('recentUsers');
     if (users.length > 0) {
       recentUsersDiv.innerHTML = users.slice(0, 5).map(user => `
-        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+        <div class="flex items-center justify-between p-3 bg-theme-tertiary rounded-lg">
           <div>
-            <p class="font-semibold">${user.name}</p>
-            <p class="text-sm text-gray-400">${user.email}</p>
+            <p class="font-semibold">${uiSecurity.escape(user.name)}</p>
+            <p class="text-sm text-theme-secondary">${uiSecurity.escape(user.email)}</p>
           </div>
-          <span class="text-xs bg-${user.role === 'admin' ? 'purple' : 'blue'}-600 px-2 py-1 rounded">
-            ${user.role}
+          <span class="text-xs ${user.role === 'admin' ? 'bg-navy-600 text-white' : 'bg-theme-secondary text-theme-secondary'} px-2 py-1 rounded">
+            ${uiSecurity.escape(user.role)}
           </span>
         </div>
       `).join('');

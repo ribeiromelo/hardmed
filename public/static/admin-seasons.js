@@ -14,12 +14,12 @@ async function loadInitialData() {
     // Populate track filter dropdown
     const filterSelect = document.getElementById('filterTrack');
     filterSelect.innerHTML = '<option value="">Todas as trilhas</option>' +
-      allTracks.map(track => `<option value="${track.id}">${track.title}</option>`).join('');
+      allTracks.map(track => `<option value="${track.id}">${uiSecurity.escape(track.title)}</option>`).join('');
     
     // Populate modal track dropdown
     const modalTrackSelect = document.getElementById('seasonTrack');
     modalTrackSelect.innerHTML = '<option value="">Selecione uma trilha</option>' +
-      allTracks.map(track => `<option value="${track.id}">${track.title}</option>`).join('');
+      allTracks.map(track => `<option value="${track.id}">${uiSecurity.escape(track.title)}</option>`).join('');
     
     // Load all seasons
     await loadSeasons();
@@ -42,7 +42,7 @@ async function loadSeasons() {
     if (allSeasons.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="text-center py-12 text-gray-400">
+          <td colspan="5" class="text-center py-12 text-theme-secondary">
             <i class="fas fa-inbox text-5xl mb-4"></i>
             <p>Nenhuma temporada cadastrada</p>
           </td>
@@ -54,17 +54,17 @@ async function loadSeasons() {
     tbody.innerHTML = allSeasons.map(season => {
       const track = allTracks.find(t => t.id === season.track_id);
       return `
-        <tr class="border-b border-gray-700 hover:bg-gray-750">
-          <td class="py-4 px-4">${season.order_index}</td>
+        <tr class="border-b border-theme hover:bg-gray-750">
+          <td class="py-4 px-4">${uiSecurity.number(season.order_index)}</td>
           <td class="py-4 px-4">
-            <div class="font-semibold">${season.title}</div>
-            <div class="text-sm text-gray-400">${season.description || ''}</div>
+            <div class="font-semibold">${uiSecurity.escape(season.title)}</div>
+            <div class="text-sm text-theme-secondary">${uiSecurity.escape(season.description || '')}</div>
           </td>
           <td class="py-4 px-4">
-            <span class="text-purple-400">${track ? track.title : 'N/A'}</span>
+            <span class="text-ink-400">${uiSecurity.escape(track ? track.title : 'N/A')}</span>
           </td>
           <td class="py-4 px-4">
-            <span class="px-3 py-1 rounded-full text-xs ${season.is_active ? 'bg-green-600' : 'bg-gray-600'}">
+            <span class="px-3 py-1 rounded-full text-xs ${season.is_active ? 'bg-green-600' : 'bg-theme-tertiary'}">
               ${season.is_active ? 'Ativa' : 'Inativa'}
             </span>
           </td>
@@ -73,7 +73,7 @@ async function loadSeasons() {
               <button onclick="editSeason(${season.id})" class="text-blue-400 hover:text-blue-300">
                 <i class="fas fa-edit"></i> Editar
               </button>
-              <button onclick="deleteSeason(${season.id}, '${season.title.replace(/'/g, "\\'")}' )" class="text-red-400 hover:text-red-300">
+              <button onclick="deleteSeason(${season.id})" class="text-red-400 hover:text-red-300">
                 <i class="fas fa-trash"></i> Excluir
               </button>
             </div>
@@ -121,7 +121,7 @@ async function editSeason(id) {
 
 async function deleteSeason(id, title) {
   const confirmed = await showConfirm(
-    `Tem certeza que deseja excluir a temporada "${title}"?\n\nATENÇÃO: Todas as aulas associadas a esta temporada também serão excluídas!`,
+    `Tem certeza que deseja excluir a temporada selecionada?\n\nATENÇÃO: Todas as aulas associadas a esta temporada também serão excluídas!`,
     'Confirmar Exclusão',
     { confirmText: 'Excluir', cancelText: 'Cancelar', dangerous: true }
   );

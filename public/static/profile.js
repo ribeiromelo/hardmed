@@ -150,9 +150,10 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
       currentUser.name = name;
       
       // Update header name
-      const userNameInHeader = document.querySelector('header button span');
+      const userNameInHeader = document.querySelector('.app-user-name');
       if (userNameInHeader) {
-        userNameInHeader.textContent = name;
+        userNameInHeader.textContent = name.replace(/^Dra?\.?\s+/i, '').split(' ')[0];
+        document.querySelector('.app-account-info strong').textContent = name;
       }
     }
     
@@ -213,12 +214,12 @@ if (newPasswordInput) {
     strengthIndicator.innerHTML = `
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs ${strength.color}">Força: ${strength.label}</span>
-        <span class="text-xs text-gray-400">${strength.width}%</span>
+        <span class="text-xs text-theme-secondary">${strength.width}%</span>
       </div>
-      <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+      <div class="w-full bg-theme-tertiary rounded-full h-2 overflow-hidden">
         <div class="${strength.color.replace('text-', 'bg-')} h-full transition-all duration-300" style="width: ${strength.width}%"></div>
       </div>
-      ${strength.feedback ? `<p class="text-xs text-gray-400 mt-1">${strength.feedback}</p>` : ''}
+      ${strength.feedback ? `<p class="text-xs text-theme-secondary mt-1">${strength.feedback}</p>` : ''}
     `;
   });
 }

@@ -139,7 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-HardMed-Request': '1'
           },
           body: JSON.stringify(data)
         });
@@ -185,7 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-HardMed-Request': '1'
           },
           body: JSON.stringify({ email, password })
         });
@@ -196,14 +198,10 @@ document.addEventListener('DOMContentLoaded', function() {
           throw new Error(result.error || 'Erro ao fazer login');
         }
         
-        // Save token as cookie (expires in 7 days)
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 7);
-        document.cookie = 'auth_token=' + result.token + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
-        
-        // Also save to localStorage as backup
-        localStorage.setItem('auth_token', result.token);
-        
+        // The server sets the HttpOnly session cookie. Remove legacy credentials.
+        document.cookie = 'auth_token=; path=/; Max-Age=0; SameSite=Lax';
+        try { localStorage.removeItem('auth_token'); } catch {}
+
         // Force redirect
         window.location.href = '/dashboard';
       } catch (error) {
@@ -226,11 +224,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Logout function
-function logout() {
-  // Remove cookie
-  document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-  // Remove localStorage
-  localStorage.removeItem('auth_token');
-  window.location.href = '/login';
+// Logout revokes the current session on the server before leaving the page.
+async function logout() {
+  try {
+    await api.post('/auth/logout', {});
+    try { localStorage.removeItem('auth_token'); } catch {}
+    window.location.href = '/login';
+  } catch (error) {
+    if (window.showAlert) showAlert('Não foi possível sair. Tente novamente.', 'Erro', 'error');
+  }
 }

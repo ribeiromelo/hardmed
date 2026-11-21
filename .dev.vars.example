@@ -1,0 +1,2 @@
+# Local development only. NEVER configure this in Cloudflare production/preview.
+ALLOW_DEMO_LOGIN=1

@@ -1,6 +1,8 @@
 // Environment bindings
 export type Bindings = {
   DB: D1Database;
+  // Local fixture only. Do not set this flag in production or preview deploys.
+  ALLOW_DEMO_LOGIN?: string;
 };
 
 // User types
@@ -144,7 +146,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user: UserPublic;
-  token: string;
 }
 
 export interface UpdateProgressRequest {

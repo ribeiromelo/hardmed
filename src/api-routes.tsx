@@ -1,18 +1,42 @@
 import { Hono } from 'hono';
+import { getCookie } from 'hono/cookie';
+import { bodyLimit } from 'hono/body-limit';
+import { setSessionCookie, clearSessionCookie, allowAuthAttempt } from './security';
 import type { Bindings, RegisterRequest, LoginRequest, UpdateProgressRequest } from './types';
 import * as auth from './auth';
 import * as db from './db';
 
 const api = new Hono<{ Bindings: Bindings }>();
 
+api.use('*', bodyLimit({ maxSize: 16 * 1024, onError: c => c.json({ error: 'Requisição muito grande' }, 413) }));
+api.use('*', async (c, next) => {
+  c.header('Cache-Control', 'no-store');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
+    const origin = c.req.header('Origin');
+    const fetchSite = c.req.header('Sec-Fetch-Site');
+    if ((origin && origin !== new URL(c.req.url).origin) || fetchSite === 'cross-site' || c.req.header('X-HardMed-Request') !== '1') {
+      return c.json({ error: 'Origem da requisição não permitida' }, 403);
+    }
+    if (!c.req.header('Content-Type')?.toLowerCase().startsWith('application/json')) {
+      return c.json({ error: 'Use JSON nesta requisição' }, 415);
+    }
+  }
+  return next();
+});
+
+
 // ========================================
 // AUTH API ROUTES
 // ========================================
 api.post('/auth/register', async (c) => {
   try {
-    const { name, email, password } = await c.req.json<RegisterRequest>();
+    const body = await c.req.json<RegisterRequest>();
+    const { name, password } = body;
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : body.email;
+    const ip = c.req.header('CF-Connecting-IP') || 'local';
+    if (!await allowAuthAttempt(c, 'register-ip', ip, 5, 60 * 60 * 1000)) return c.json({ error: 'Muitas tentativas. Tente mais tarde.' }, 429);
     
-    if (!name || !email || !password) {
+    if (typeof name !== 'string' || name.trim().length < 3 || name.trim().length > 120 || !email || !password) {
       return c.json({ error: 'Todos os campos são obrigatórios' }, 400);
     }
     
@@ -34,7 +58,7 @@ api.post('/auth/register', async (c) => {
     
     // Create user
     const passwordHash = await auth.hashPassword(password);
-    const user = await db.createUser(DB, name, email, passwordHash);
+    const user = await db.createUser(DB, name.trim(), email, passwordHash);
     
     return c.json({ 
       message: 'Usuário criado com sucesso',
@@ -48,7 +72,13 @@ api.post('/auth/register', async (c) => {
 
 api.post('/auth/login', async (c) => {
   try {
-    const { email, password } = await c.req.json<LoginRequest>();
+    const body = await c.req.json<LoginRequest>();
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : body.email;
+    const password = body.password;
+    const ip = c.req.header('CF-Connecting-IP') || 'local';
+    if (!await allowAuthAttempt(c, 'login-ip', ip, 50, 15 * 60 * 1000)) return c.json({ error: 'Muitas tentativas. Tente mais tarde.' }, 429);
+    if (!auth.isValidEmail(email) || typeof password !== 'string' || !password.length || new TextEncoder().encode(password).length > 1024) return c.json({ error: 'E-mail ou senha incorretos' }, 401);
+    if (!await allowAuthAttempt(c, 'login-account', email, 10, 15 * 60 * 1000)) return c.json({ error: 'Muitas tentativas. Tente mais tarde.' }, 429);
     
     if (!email || !password) {
       return c.json({ error: 'E-mail e senha são obrigatórios' }, 400);
@@ -58,6 +88,8 @@ api.post('/auth/login', async (c) => {
     
     const user = await db.getUserByEmail(DB, email);
     if (!user) {
+      // Keep unknown-account failures computationally similar to a real login.
+      await auth.verifyPassword(password, 'scrypt$16384$8$5$00000000000000000000000000000000$0000000000000000000000000000000000000000000000000000000000000000');
       return c.json({ error: 'E-mail ou senha incorretos' }, 401);
     }
     
@@ -69,16 +101,26 @@ api.post('/auth/login', async (c) => {
     if (!user.is_active) {
       return c.json({ error: 'Conta desativada' }, 401);
     }
+    if (c.env.ALLOW_DEMO_LOGIN !== '1' && password === 'admin123' && ['admin@hardmedicina.com','erique@exemplo.com'].includes(email)) {
+      return c.json({ error: 'Credencial de demonstração desativada. É necessário redefinir a senha.' }, 403);
+    }
     
-    // Update last access
+    if (auth.isLegacyPasswordHash(user.password_hash)) {
+      const upgraded = await auth.hashPassword(password);
+      const changed = await DB.prepare('UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?')
+        .bind(upgraded, user.id, user.password_hash).run();
+      if (changed.meta.changes !== 1) return c.json({ error: 'Tente entrar novamente' }, 409);
+      user.password_hash = upgraded;
+    }
     await db.updateUserLastAccess(DB, user.id);
-    
-    const token = await auth.generateToken(user);
-    
-    return c.json({
-      user: auth.sanitizeUser(user),
-      token
-    });
+    const token = await auth.generateToken(user, DB);
+    setSessionCookie(c, token);
+    // Bound retention for expired sessions and one-day rate-limit keys.
+    await DB.batch([
+      DB.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?').bind(Date.now()),
+      DB.prepare('DELETE FROM auth_rate_limits WHERE window_start < ?').bind(Date.now() - 24 * 60 * 60 * 1000),
+    ]);
+    return c.json({ user: auth.sanitizeUser(user) });
   } catch (error) {
     console.error('Login error:', error);
     return c.json({ error: 'Erro ao fazer login' }, 500);
@@ -88,43 +130,55 @@ api.post('/auth/login', async (c) => {
 // ========================================
 // PROTECTED API MIDDLEWARE
 // ========================================
+api.post('/auth/logout', async (c) => {
+  await auth.revokeToken(getCookie(c, auth.SESSION_COOKIE), c.env.DB);
+  clearSessionCookie(c);
+  return c.json({ success: true });
+});
+
 api.use('/*', async (c, next) => {
-  // Skip auth for login/register
-  if (c.req.path.includes('/auth/')) {
-    return next();
+  const token = getCookie(c, auth.SESSION_COOKIE);
+  const user = token ? await auth.verifyToken(token, c.env.DB) : null;
+  if (!user) {
+    clearSessionCookie(c);
+    return c.json({ error: 'Sessão inválida ou expirada' }, 401);
   }
-  
-  // Try to get token from Authorization header or cookie
-  let token = null;
-  
-  const authHeader = c.req.header('Authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  } else {
-    // Try to get from cookie
-    const cookieHeader = c.req.header('Cookie');
-    if (cookieHeader) {
-      const match = cookieHeader.match(/auth_token=([^;]+)/);
-      if (match) {
-        token = match[1];
-      }
+  // Permissions come from the current database record, never from client input.
+  c.set('userId', user.id);
+  c.set('userRole', user.role);
+  const trackQuery = c.req.query('track_id');
+  const resourceId = c.req.param('id');
+  for (const value of [trackQuery, resourceId]) {
+    if (value != null && (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value)))) return c.json({ error: 'Identificador inválido' }, 400);
+  }
+  if (['POST', 'PUT', 'PATCH'].includes(c.req.method)) {
+    let body;
+    try { body = await c.req.json(); } catch { return c.json({ error: 'JSON inválido' }, 400); }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return c.json({ error: 'Objeto JSON obrigatório' }, 400);
+    const strings = { name: 120, title: 250, description: 12000, message: 4000, icon: 80, currentPassword: 1024, newPassword: 1024, key_points: 12000, expires_at: 40 };
+    for (const [key, max] of Object.entries(strings)) {
+      if (body[key] != null && (typeof body[key] !== 'string' || body[key].length > max)) return c.json({ error: `Campo inválido: ${key}` }, 400);
     }
+    for (const key of ['specialty_id', 'track_id', 'season_id', 'lesson_id', 'duration_minutes', 'total_lessons', 'order_index', 'watch_time_seconds', 'last_position_seconds']) {
+      if (body[key] != null && (typeof body[key] !== 'number' || !Number.isSafeInteger(body[key]) || body[key] < (key.endsWith('_id') ? 1 : 0))) return c.json({ error: `Campo numérico inválido: ${key}` }, 400);
+    }
+    for (const key of ['is_active', 'is_completed']) {
+      if (body[key] != null && ![true, false, 0, 1].includes(body[key])) return c.json({ error: `Campo inválido: ${key}` }, 400);
+    }
+    for (const key of ['cover_image', 'pdf_url', 'video_url', 'link_url']) {
+      const value = body[key];
+      if (value == null || value === '') continue;
+      if (typeof value !== 'string' || value.length > 2048) return c.json({ error: `URL inválida: ${key}` }, 400);
+      try {
+        const url = new URL(value, new URL(c.req.url).origin);
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
+        if (key === 'video_url' && !['youtube.com','www.youtube.com','youtu.be','www.youtube-nocookie.com','vimeo.com','player.vimeo.com'].includes(url.hostname)) throw new Error();
+      } catch { return c.json({ error: `URL inválida: ${key}` }, 400); }
+    }
+    if (body.icon && !/^fa-[a-z0-9-]+$/.test(body.icon)) return c.json({ error: 'Ícone inválido' }, 400);
+    if (body.type != null && !['info','success','warning','error'].includes(body.type)) return c.json({ error: 'Tipo inválido' }, 400);
+    if (body.expires_at && !Number.isFinite(Date.parse(body.expires_at))) return c.json({ error: 'Data inválida' }, 400);
   }
-  
-  if (!token) {
-    return c.json({ error: 'Token não fornecido' }, 401);
-  }
-  
-  const payload = await auth.verifyToken(token);
-  
-  if (!payload) {
-    return c.json({ error: 'Token inválido ou expirado' }, 401);
-  }
-  
-  // Store user info in context
-  c.set('userId', payload.id);
-  c.set('userRole', payload.role);
-  
   return next();
 });
 
@@ -169,7 +223,7 @@ api.put('/user/profile', async (c) => {
     const { DB } = c.env;
     const { name } = await c.req.json();
     
-    if (!name || name.trim().length < 3) {
+    if (typeof name !== 'string' || name.trim().length < 3 || name.trim().length > 120) {
       return c.json({ error: 'Nome deve ter pelo menos 3 caracteres' }, 400);
     }
     
@@ -191,7 +245,7 @@ api.put('/user/password', async (c) => {
     const { DB } = c.env;
     const { currentPassword, newPassword } = await c.req.json();
     
-    if (!currentPassword || !newPassword) {
+    if (typeof currentPassword !== 'string' || !currentPassword || !auth.isValidPassword(newPassword)) {
       return c.json({ error: 'Senhas são obrigatórias' }, 400);
     }
     
@@ -208,16 +262,19 @@ api.put('/user/password', async (c) => {
     // Verify current password
     const isValid = await auth.verifyPassword(currentPassword, user.password_hash);
     if (!isValid) {
-      return c.json({ error: 'Senha atual incorreta' }, 401);
+      return c.json({ error: 'Senha atual incorreta' }, 400);
     }
     
     // Hash new password
     const newPasswordHash = await auth.hashPassword(newPassword);
     
     // Update password
-    await DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
-      .bind(newPasswordHash, userId)
-      .run();
+    await DB.batch([
+      DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(newPasswordHash, userId),
+      DB.prepare('DELETE FROM auth_sessions WHERE user_id = ?').bind(userId),
+    ]);
+    user.password_hash = newPasswordHash;
+    setSessionCookie(c, await auth.generateToken(user, DB));
     
     return c.json({ success: true, message: 'Senha alterada com sucesso!' });
   } catch (error) {
@@ -435,11 +492,12 @@ api.get('/seasons', async (c) => {
     const { DB } = c.env;
     const trackId = c.req.query('track_id');
     
-    let query = 'SELECT * FROM seasons';
+    let query = 'SELECT * FROM seasons WHERE 1 = 1';
     let bindings: any[] = [];
+    if (c.get('userRole') !== 'admin') query += ' AND is_active = 1 AND track_id IN (SELECT id FROM tracks WHERE is_active = 1)';
     
     if (trackId) {
-      query += ' WHERE track_id = ?';
+      query += ' AND track_id = ?';
       bindings.push(trackId);
     }
     
@@ -565,15 +623,19 @@ api.get('/lessons', async (c) => {
       FROM lessons l
       JOIN seasons s ON l.season_id = s.id
       JOIN tracks t ON s.track_id = t.id
+      WHERE 1 = 1
     `;
+    const bindings = [];
+    if (c.get('userRole') !== 'admin') query += ' AND l.is_active = 1 AND s.is_active = 1 AND t.is_active = 1';
     
     if (trackId) {
-      query += ` WHERE s.track_id = ${trackId}`;
+      query += ' AND s.track_id = ?';
+      bindings.push(Number(trackId));
     }
     
     query += ` ORDER BY s.track_id, l.season_id, l.order_index`;
     
-    const result = await DB.prepare(query).all();
+    const result = await DB.prepare(query).bind(...bindings).all();
     return c.json(result.results || []);
   } catch (error) {
     console.error('Get lessons error:', error);
@@ -1034,7 +1096,9 @@ api.put('/admin/notifications/:id', async (c) => {
     const { DB } = c.env;
     const id = c.req.param('id');
     const body = await c.req.json();
-    const { title, message, type, icon, link_url, is_active, expires_at } = body;
+    const existing = await DB.prepare('SELECT * FROM notifications WHERE id = ?').bind(id).first();
+    if (!existing) return c.json({ error: 'Notificação não encontrada' }, 404);
+    const { title, message, type, icon, link_url, is_active, expires_at } = { ...existing, ...body };
     
     if (!title || !message) {
       return c.json({ error: 'Título e mensagem são obrigatórios' }, 400);

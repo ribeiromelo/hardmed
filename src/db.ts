@@ -12,7 +12,7 @@ import type {
 
 // User queries
 export async function getUserByEmail(db: D1Database, email: string): Promise<User | null> {
-  const result = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<User>();
+  const result = await db.prepare('SELECT * FROM users WHERE email = ? COLLATE NOCASE').bind(email).first<User>();
   return result;
 }
 
@@ -186,7 +186,7 @@ export async function getLessonBySlug(
     FROM lessons l
     JOIN seasons s ON l.season_id = s.id
     JOIN tracks t ON s.track_id = t.id
-    WHERE l.slug = ? AND l.is_active = 1
+    WHERE l.slug = ? AND l.is_active = 1 AND s.is_active = 1 AND t.is_active = 1
   `).bind(slug).first<Lesson>();
   
   if (!lesson) return null;

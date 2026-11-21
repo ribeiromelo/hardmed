@@ -32,9 +32,9 @@ async function loadLesson(slug) {
     // Meta info
     if(lessonMeta) {
         const metaInfo = [];
-        metaInfo.push(lesson.track_title);
-        if (lesson.season_title) metaInfo.push(lesson.season_title);
-        if (lesson.duration_minutes) metaInfo.push(`<i class="fas fa-clock text-xs"></i> ${lesson.duration_minutes} min`);
+        metaInfo.push(uiSecurity.escape(lesson.track_title));
+        if (lesson.season_title) metaInfo.push(uiSecurity.escape(lesson.season_title));
+        if (lesson.duration_minutes) metaInfo.push(`<i class="fas fa-clock text-xs"></i> ${uiSecurity.number(lesson.duration_minutes)} min`);
         lessonMeta.innerHTML = metaInfo.join('<span class="mx-2 text-theme-tertiary">•</span>');
     }
     
@@ -54,7 +54,8 @@ async function loadLesson(slug) {
           embedUrl = `https://www.youtube.com/embed/${videoId}`;
         }
       }
-      videoPlayer.src = embedUrl;
+      const safeEmbed = uiSecurity.url(embedUrl);
+      if (safeEmbed && ['www.youtube.com','www.youtube-nocookie.com','player.vimeo.com'].includes(new URL(safeEmbed).hostname)) videoPlayer.src = safeEmbed;
     }
     
     // Key points
@@ -68,7 +69,7 @@ async function loadLesson(slug) {
                 <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <i class="fas fa-check text-green-500 text-xs"></i>
                 </div>
-                <span class="text-theme-secondary text-sm leading-relaxed">${p}</span>
+                <span class="text-theme-secondary text-sm leading-relaxed">${uiSecurity.escape(p)}</span>
               </div>
             `).join('');
         }
@@ -85,7 +86,7 @@ async function loadLesson(slug) {
       const downloadsEl = document.getElementById('downloads');
       if(downloadsEl) {
           downloadsEl.innerHTML = `
-            <a href="${lesson.pdf_url}" target="_blank" class="btn bg-theme-secondary text-theme-secondary border border-theme hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2 group">
+            <a href="${uiSecurity.escape(uiSecurity.url(lesson.pdf_url))}" target="_blank" rel="noopener noreferrer" class="btn bg-theme-secondary text-theme-secondary border border-theme hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2 group">
               <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
                 <i class="fas fa-file-pdf"></i>
               </div>
@@ -127,7 +128,7 @@ async function loadTrackSidebar(trackId) {
     
     // Update track info
     const trackTitleEl = document.getElementById('trackTitle');
-    const trackProgressEl = document.getElementById('trackProgress');
+    const trackProgressEl = document.getElementById('trackProgressText');
     const trackProgressBar = document.getElementById('trackProgressBar');
     
     if(trackTitleEl) trackTitleEl.textContent = trackData.track.title;
@@ -144,11 +145,11 @@ async function loadTrackSidebar(trackId) {
     if(seasonsDiv) {
         seasonsDiv.innerHTML = trackData.seasons.map((season, index) => `
           <div class="border border-theme rounded-xl overflow-hidden bg-theme-primary/30">
-            <button onclick="toggleSidebarSeason(${index})" class="w-full text-left flex items-center justify-between p-3 hover:bg-theme-tertiary transition-colors">
+            <button id="sidebar-toggle-${index}" aria-expanded="false" aria-controls="sidebar-season-${index}" onclick="toggleSidebarSeason(${index})" class="w-full text-left flex items-center justify-between p-3 hover:bg-theme-tertiary transition-colors">
               <div class="flex items-center gap-3">
                 <span class="w-6 h-6 rounded-md bg-theme-tertiary flex items-center justify-center text-xs font-bold text-theme-secondary">${index + 1}</span>
                 <div>
-                    <div class="font-bold text-sm text-theme-primary">${season.title}</div>
+                    <div class="font-bold text-sm text-theme-primary">${uiSecurity.escape(season.title)}</div>
                     <div class="text-xs text-theme-tertiary">${season.lessons.length} aulas</div>
                 </div>
               </div>
@@ -156,7 +157,7 @@ async function loadTrackSidebar(trackId) {
             </button>
             <div id="sidebar-season-${index}" class="hidden border-t border-theme">
               ${season.lessons.map(lessonItem => `
-                <a href="/aula/${lessonItem.slug}" class="flex items-center gap-3 p-3 text-sm hover:bg-theme-tertiary transition-colors ${lessonItem.id === currentLesson.id ? 'bg-primary-500/10 border-l-2 border-primary-500' : 'border-l-2 border-transparent'}">
+                <a href="/aula/${encodeURIComponent(lessonItem.slug)}" class="flex items-center gap-3 p-3 text-sm hover:bg-theme-tertiary transition-colors ${lessonItem.id === currentLesson.id ? 'bg-primary-500/10 border-l-2 border-primary-500' : 'border-l-2 border-transparent'}">
                   <div class="flex-shrink-0">
                       ${lessonItem.is_completed 
                         ? '<i class="fas fa-check-circle text-green-500"></i>' 
@@ -165,8 +166,8 @@ async function loadTrackSidebar(trackId) {
                             : '<i class="far fa-circle text-theme-tertiary"></i>'
                       }
                   </div>
-                  <span class="flex-1 truncate ${lessonItem.id === currentLesson.id ? 'text-primary-500 font-medium' : 'text-theme-secondary'}">${lessonItem.title}</span>
-                  <span class="text-xs text-theme-tertiary">${lessonItem.duration_minutes}m</span>
+                  <span class="flex-1 truncate ${lessonItem.id === currentLesson.id ? 'text-primary-500 font-medium' : 'text-theme-secondary'}">${uiSecurity.escape(lessonItem.title)}</span>
+                  <span class="text-xs text-theme-tertiary">${uiSecurity.number(lessonItem.duration_minutes)}m</span>
                 </a>
               `).join('')}
             </div>
@@ -181,6 +182,7 @@ async function loadTrackSidebar(trackId) {
         const seasonDiv = document.getElementById('sidebar-season-' + index);
         const chevron = document.getElementById('sidebar-chevron-' + index);
         if (seasonDiv) seasonDiv.classList.remove('hidden');
+        document.getElementById('sidebar-toggle-' + index)?.setAttribute('aria-expanded', 'true');
         if (chevron) chevron.classList.add('rotate-180');
       }
     });
@@ -197,7 +199,8 @@ window.toggleSidebarSeason = function(index) {
   const chevron = document.getElementById('sidebar-chevron-' + index);
   
   if (seasonDiv && chevron) {
-    seasonDiv.classList.toggle('hidden');
+    const expanded = !seasonDiv.classList.toggle('hidden');
+    document.getElementById('sidebar-toggle-' + index)?.setAttribute('aria-expanded', String(expanded));
     chevron.classList.toggle('rotate-180');
   }
 }
@@ -208,7 +211,7 @@ function updateCompleteButton(isCompleted) {
   const icon = btn.querySelector('i');
   
   if (isCompleted) {
-    btn.className = 'btn w-full md:w-auto bg-green-500 text-white hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20';
+    btn.className = 'btn btn-primary w-full md:w-auto flex items-center justify-center gap-2';
     if(btnText) btnText.textContent = 'Concluída';
     if(icon) icon.className = 'fas fa-check-circle';
   } else {

@@ -1,3 +1,4 @@
+(() => {
 // Notifications system
 
 let notifications = [];
@@ -59,7 +60,7 @@ function renderNotifications() {
   
   if (notifications.length === 0) {
     container.innerHTML = `
-      <div class="text-center py-8 text-gray-400">
+      <div class="text-center py-8 text-theme-secondary">
         <i class="fas fa-bell-slash text-3xl mb-2"></i>
         <p>Nenhuma notificação</p>
       </div>
@@ -67,19 +68,25 @@ function renderNotifications() {
     return;
   }
   
+  container.onclick = event => {
+    const element = event.target.closest('[data-notification-id]');
+    if (!element) return;
+    const notification = notifications.find(item => item.id === Number(element.dataset.notificationId));
+    if (notification) window.handleNotificationClick(notification.id, notification.link_url || '');
+  };
   container.innerHTML = notifications.map(notif => `
-    <div class="p-4 hover:bg-gray-700 border-b border-gray-700 last:border-0 cursor-pointer ${!notif.is_read ? 'bg-purple-900/20' : ''}" 
-         onclick="handleNotificationClick(${notif.id}, '${notif.link_url || ''}')">
+    <div class="p-4 hover:bg-theme-tertiary border-b border-theme last:border-0 cursor-pointer ${!notif.is_read ? 'bg-primary-500/10' : ''}"
+         data-notification-id="${notif.id}">
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getNotificationColor(notif.type)}">
-          <i class="fas ${notif.icon || getNotificationIcon(notif.type)}"></i>
+          <i class="fas ${uiSecurity.icon(notif.icon, getNotificationIcon(notif.type))}"></i>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-2">
-            <h4 class="font-semibold text-sm ${!notif.is_read ? 'text-white' : 'text-gray-300'}">${notif.title}</h4>
+            <h4 class="font-semibold text-sm ${!notif.is_read ? 'text-theme-primary' : 'text-theme-secondary'}">${uiSecurity.escape(notif.title)}</h4>
             ${!notif.is_read ? '<div class="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0 mt-1"></div>' : ''}
           </div>
-          <p class="text-xs text-gray-400 mt-1">${notif.message}</p>
+          <p class="text-xs text-theme-secondary mt-1">${uiSecurity.escape(notif.message)}</p>
           <p class="text-xs text-gray-500 mt-1">${formatNotificationTime(notif.created_at)}</p>
         </div>
       </div>
@@ -98,10 +105,10 @@ function getNotificationIcon(type) {
 
 function getNotificationColor(type) {
   switch(type) {
-    case 'success': return 'bg-green-600';
-    case 'error': return 'bg-red-600';
-    case 'warning': return 'bg-yellow-600';
-    default: return 'bg-blue-600';
+    case 'success': return 'bg-green-700 text-white';
+    case 'error': return 'bg-red-700 text-white';
+    case 'warning': return 'bg-yellow-700 text-white';
+    default: return 'bg-blue-700 text-white';
   }
 }
 
@@ -138,7 +145,8 @@ window.handleNotificationClick = async function(notificationId, linkUrl) {
     
     // Navigate if has link
     if (linkUrl) {
-      window.location.href = linkUrl;
+      const safeURL = uiSecurity.url(linkUrl);
+      if (safeURL) window.location.href = safeURL;
     }
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -172,3 +180,5 @@ document.addEventListener('click', (e) => {
     dropdown.classList.add('hidden');
   }
 });
+
+})();

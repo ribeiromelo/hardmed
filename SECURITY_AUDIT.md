@@ -1,3 +1,5 @@
+> **Relatório histórico, não válido como aprovação atual.** Em 21/11/2026 foi confirmada localmente a aceitação de tokens sem assinatura válida. As afirmações de bcrypt e HttpOnly abaixo não correspondem ao código do backup. Consulte [os achados atuais](docs/SECURITY_FINDINGS.md).
+
 # Relatório de Auditoria de Segurança - HardMedicina
 **Data:** 2025-01-27  
 **Versão:** 1.0  

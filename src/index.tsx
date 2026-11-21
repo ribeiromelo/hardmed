@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import type { Bindings } from './types';
 import * as auth from './auth';
@@ -19,14 +18,17 @@ app.use('*', async (c, next) => {
     "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
     "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
+    "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; " +
     "img-src 'self' data: https: http:; " +
     "connect-src 'self';"
+    + " object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self';"
   );
   
   // Other security headers
   c.header('X-Content-Type-Options', 'nosniff');
   c.header('X-Frame-Options', 'DENY');
   c.header('X-XSS-Protection', '1; mode=block');
+  if (new URL(c.req.url).protocol === 'https:') c.header('Strict-Transport-Security', 'max-age=31536000');
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   
@@ -36,8 +38,7 @@ app.use('*', async (c, next) => {
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
 
-// Enable CORS for API routes
-app.use('/api/*', cors());
+// APIs are same-origin; cross-origin credentialed access is not enabled.
 
 // Mount API routes
 app.route('/api', api);
@@ -516,48 +517,45 @@ app.get('/dashboard', async (c) => {
     <BaseLayout title="Dashboard" user={user}>
       {Header({ user, showSearch: true })}
       
-      <main class="container mx-auto px-4 py-8">
-        {/* Welcome Hero */}
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl mb-10 text-white">
-          <div class="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-          <div class="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <h1 class="text-3xl md:text-4xl font-bold mb-3 font-heading">Olá, <span id="userName">{user.name.split(' ')[0]}</span> 👋</h1>
-              <p class="text-purple-100 text-lg opacity-90">Pronto para continuar seus estudos hoje?</p>
-            </div>
-            <div class="mt-6 md:mt-0">
-              <a href="/trilhas" class="btn bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition">
-                <i class="fas fa-play mr-2"></i> Retomar Estudos
-              </a>
-            </div>
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
+        <section class="app-welcome" aria-labelledby="welcomeHeading">
+          <div>
+            <span class="app-eyebrow">Seu espaço de aprendizado</span>
+            <h1 id="welcomeHeading">Olá, <span id="userName">{user.name.replace(/^Dra?\.?\s+/i, '').split(' ')[0]}</span>.<br />Vamos em frente?</h1>
+            <p>Um novo olhar para a sua prática. Continue aprendendo, uma aula de cada vez.</p>
+            <a href="/trilhas" id="resumeStudy" class="btn btn-primary"><i class="fas fa-play mr-2" aria-hidden="true"></i>Explorar trilhas</a>
           </div>
-        </div>
-        
+          <div class="app-welcome-visual" aria-hidden="true">
+            <span class="app-orbit"></span><span class="app-orbit"></span><span class="app-orbit"></span>
+            <i class="fas fa-book-medical app-visual-icon"></i><span class="app-visual-note">Conhecimento que acompanha você.</span>
+          </div>
+        </section>
+
         {/* Progress Overview */}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div class="card p-6 lg:col-span-2 bg-theme-secondary border-theme relative overflow-hidden">
             <div class="flex items-center justify-between mb-6">
               <h2 class="text-xl font-bold text-text-primary flex items-center">
-                <i class="fas fa-chart-line mr-2 text-purple-500"></i> Seu Progresso Geral
+                <i class="fas fa-chart-line mr-2 text-ink-500"></i> Seu Progresso Geral
               </h2>
-              <span id="totalProgress" class="text-3xl font-bold text-purple-500">0%</span>
+              <span id="totalProgress" class="text-3xl font-bold text-ink-500">0%</span>
             </div>
             
             <div class="relative pt-1">
               <div class="flex mb-2 items-center justify-between">
                 <div class="text-right">
-                  <span class="text-xs font-semibold inline-block text-purple-500">
-                    Nível Estudante
+                  <span class="text-xs font-semibold inline-block text-ink-500">
+                    Aulas concluídas no catálogo
                   </span>
                 </div>
               </div>
               <div class="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-theme-tertiary">
-                <div id="progressBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-1000 ease-out"></div>
+                <div id="progressBar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-accent-500 transition-all duration-1000 ease-out"></div>
               </div>
               <div class="flex justify-between text-xs text-text-tertiary">
-                <span>Iniciante</span>
-                <span>Intermediário</span>
-                <span>Expert</span>
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
               </div>
             </div>
             
@@ -571,72 +569,45 @@ app.get('/dashboard', async (c) => {
                 <p class="text-xs text-text-tertiary uppercase tracking-wide mt-1">Aulas Totais</p>
               </div>
               <div class="text-center border-l border-theme">
-                <p class="text-2xl font-bold text-text-primary" id="timeSpent">0h</p>
-                <p class="text-xs text-text-tertiary uppercase tracking-wide mt-1">Tempo Estudado</p>
+                <p class="text-2xl font-bold text-text-primary" id="startedTracks">0</p>
+                <p class="text-xs text-text-tertiary uppercase tracking-wide mt-1">Trilhas Iniciadas</p>
               </div>
             </div>
           </div>
           
-          <div class="card p-6 bg-theme-secondary border-theme flex flex-col justify-center items-center text-center">
-            <div class="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-4 text-green-500 relative">
-              <i class="fas fa-trophy text-3xl"></i>
-              <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full text-white text-xs flex items-center justify-center border-2 border-theme-secondary">1</div>
-            </div>
-            <h3 class="text-lg font-bold text-text-primary mb-1">Sua Conquista Atual</h3>
-            <p class="text-sm text-text-secondary mb-4">Iniciante Dedicado</p>
-            <button class="text-purple-500 hover:text-purple-600 text-sm font-medium transition">
-              Ver todas conquistas <i class="fas fa-arrow-right ml-1"></i>
-            </button>
-          </div>
+          <aside class="app-learning-note">
+            <i class="fas fa-book-open" aria-hidden="true"></i>
+            <div><h2>No seu ritmo.<br />Na sua direção.</h2><p>Encontre aulas organizadas por especialidade e acompanhe cada etapa do seu aprendizado.</p></div>
+            <a href="/trilhas">Encontrar minha próxima trilha</a>
+          </aside>
         </div>
-        
+
         {/* Tracks Section */}
         <div class="mb-8">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-text-primary font-heading border-l-4 border-purple-500 pl-3">Minhas Trilhas</h2>
-            <a href="/trilhas" class="text-purple-500 hover:text-purple-600 transition font-medium flex items-center bg-purple-500/10 px-4 py-2 rounded-lg hover:bg-purple-500/20">
-              Catálogo Completo <i class="fas fa-arrow-right ml-2"></i>
+            <h2 class="text-2xl font-bold text-text-primary font-heading">Minhas Trilhas</h2>
+            <a href="/trilhas" class="text-ink-500 hover:text-ink-600 transition font-medium flex items-center bg-ink-500/10 px-4 py-2 rounded-lg hover:bg-ink-500/20">
+              Catálogo Completo
             </a>
           </div>
           
           <div id="myTracks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="col-span-full py-16 text-center">
-              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mb-4"></div>
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-ink-500 mb-4"></div>
               <p class="text-text-secondary">Carregando suas trilhas...</p>
             </div>
           </div>
         </div>
         
-        {/* Recommended Section (Static Placeholder) */}
-        <div class="mb-12">
-          <h2 class="text-2xl font-bold text-text-primary font-heading border-l-4 border-pink-500 pl-3 mb-6">Recomendado para Você</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="card p-6 bg-theme-secondary border-theme flex items-start space-x-4 cursor-pointer hover:border-pink-500 transition group">
-              <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
-                <img src="https://source.unsplash.com/random/200x200?doctor" class="w-full h-full object-cover group-hover:scale-110 transition" alt="ECG" />
-              </div>
-              <div>
-                <span class="text-xs font-bold text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded mb-2 inline-block">Cardiologia</span>
-                <h3 class="font-bold text-text-primary text-lg mb-1 group-hover:text-pink-500 transition">Interpretação Avançada de ECG</h3>
-                <p class="text-sm text-text-secondary">Aprenda a identificar arritmias complexas.</p>
-              </div>
-            </div>
-            <div class="card p-6 bg-theme-secondary border-theme flex items-start space-x-4 cursor-pointer hover:border-blue-500 transition group">
-              <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 overflow-hidden">
-                <img src="https://source.unsplash.com/random/200x200?surgery" class="w-full h-full object-cover group-hover:scale-110 transition" alt="Trauma" />
-              </div>
-              <div>
-                <span class="text-xs font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded mb-2 inline-block">Emergência</span>
-                <h3 class="font-bold text-text-primary text-lg mb-1 group-hover:text-blue-500 transition">Protocolo ATLS Atualizado</h3>
-                <p class="text-sm text-text-secondary">As novidades da 10ª edição do ATLS.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <section aria-labelledby="discoverHeading">
+          <div class="app-section-heading"><div><span class="app-eyebrow">Novos caminhos</span><h2 id="discoverHeading">Explore outras trilhas</h2><p>Conteúdos do catálogo para ampliar o seu aprendizado.</p></div><a href="/trilhas">Explorar catálogo</a></div>
+          <div id="discoverTracks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite"></div>
+        </section>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
+      <script src="/static/app-cards.js"></script>
       <script src="/static/dashboard.js"></script>
     </BaseLayout>
   );
@@ -655,22 +626,28 @@ app.get('/trilhas', async (c) => {
     <BaseLayout title="Todas as Trilhas" user={user}>
       {Header({ user, showSearch: true })}
       
-      <main class="container mx-auto px-4 py-8">
-        <div class="mb-10 text-center">
-          <h1 class="text-4xl font-bold mb-3 text-text-primary font-heading">Catálogo de Trilhas</h1>
-          <p class="text-text-secondary max-w-2xl mx-auto">Explore nosso conteúdo completo organizado por especialidades médicas. Escolha sua próxima meta de aprendizado.</p>
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
+        <div class="app-catalog-head">
+          <span class="app-eyebrow">Biblioteca HardMedicina</span>
+          <h1>Seu próximo passo<br />começa por aqui.</h1>
+          <p>Explore as trilhas por especialidade. Encontre o conteúdo que faz sentido para a sua prática.</p>
         </div>
-        
+        <div class="app-catalog-tools">
+          <div class="app-catalog-search"><label for="trackSearch" class="sr-only">Buscar trilhas</label><i class="fas fa-search" aria-hidden="true"></i><input id="trackSearch" class="input-field" type="search" placeholder="Buscar por trilha ou especialidade" /></div>
+          <div id="specialtyFilters" class="app-catalog-filters" aria-label="Filtrar por especialidade"></div>
+        </div>
+        <p id="catalogStatus" class="sr-only" role="status" aria-live="polite"></p>
         <div id="specialtiesContent">
           <div class="text-center py-20">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 mb-4"></div>
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-ink-500 mb-4"></div>
             <p class="text-text-secondary">Carregando catálogo...</p>
           </div>
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
+      <script src="/static/app-cards.js"></script>
       <script src="/static/tracks.js"></script>
     </BaseLayout>
   );
@@ -687,24 +664,24 @@ app.get('/trilha/:slug', async (c) => {
     <BaseLayout title="Trilha" user={user}>
       {Header({ user, showSearch: true })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <nav class="text-sm text-text-tertiary mb-6 flex items-center">
-          <a href="/dashboard" class="hover:text-purple-500 transition">Início</a>
+          <a href="/dashboard" class="hover:text-ink-500 transition">Início</a>
           <i class="fas fa-chevron-right mx-3 text-xs opacity-50"></i>
-          <a href="/trilhas" class="hover:text-purple-500 transition">Trilhas</a>
+          <a href="/trilhas" class="hover:text-ink-500 transition">Trilhas</a>
           <i class="fas fa-chevron-right mx-3 text-xs opacity-50"></i>
           <span class="text-text-primary font-medium" id="trackBreadcrumb">Carregando...</span>
         </nav>
         
         <div id="trackContent">
           <div class="text-center py-20">
-            <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 mb-4"></div>
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-ink-500 mb-4"></div>
             <p class="text-text-secondary">Carregando conteúdo da trilha...</p>
           </div>
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       {html`<script>window.trackSlug = '${slug}';</script>`}
       <script src="/static/track.js"></script>
@@ -723,13 +700,13 @@ app.get('/aula/:slug', async (c) => {
     <BaseLayout title="Aula" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-6">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-6">
         <div class="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
           {/* Main Content */}
           <div class="flex-1 min-w-0">
             <div id="lessonContent">
               <div class="bg-black rounded-2xl overflow-hidden mb-6 shadow-2xl relative" style="aspect-ratio: 16/9;">
-                <iframe id="videoPlayer" width="100%" height="100%" frameborder="0" allowfullscreen class="absolute inset-0"></iframe>
+                <iframe title="Vídeo da aula" id="videoPlayer" width="100%" height="100%" frameborder="0" allowfullscreen class="absolute inset-0"></iframe>
               </div>
               
               <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
@@ -782,7 +759,7 @@ app.get('/aula/:slug', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       {html`<script>window.lessonSlug = '${slug}';</script>`}
       <script src="/static/lesson.js"></script>
@@ -797,6 +774,7 @@ app.get('/trilhas/:specialtySlug', async (c) => {
   const specialtySlug = c.req.param('specialtySlug');
   const { DB } = c.env;
   const user = await getUserFromToken(c);
+  if (!user) return c.redirect('/login');
   
   const specialty = await db.getSpecialtyBySlug(DB, specialtySlug);
   if (!specialty) {
@@ -807,16 +785,16 @@ app.get('/trilhas/:specialtySlug', async (c) => {
     <BaseLayout title={`Trilhas de ${specialty.name}`} user={user}>
       {Header({ user, showSearch: true })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <nav class="text-sm text-text-tertiary mb-6 flex items-center">
-          <a href="/" class="hover:text-purple-500">Início</a>
+          <a href="/dashboard" class="hover:text-ink-500">Início</a>
           <i class="fas fa-chevron-right mx-3 text-xs opacity-50"></i>
-          <a href="/trilhas" class="hover:text-purple-500">Trilhas</a>
+          <a href="/trilhas" class="hover:text-ink-500">Trilhas</a>
           <i class="fas fa-chevron-right mx-3 text-xs opacity-50"></i>
           <span class="text-text-primary font-medium">{specialty.name}</span>
         </nav>
         
-        <div class="flex items-center mb-10 p-8 rounded-2xl bg-gradient-to-r from-theme-tertiary to-transparent border border-theme">
+        <div class="app-specialty-intro flex items-center mb-10 p-8 rounded-2xl bg-gradient-to-r from-theme-tertiary to-transparent border border-theme">
           <div class="w-20 h-20 rounded-full bg-theme-secondary flex items-center justify-center mr-6 shadow-lg border border-theme">
             <i class={`fas ${specialty.icon || 'fa-book-medical'} text-4xl gradient-text`}></i>
           </div>
@@ -834,180 +812,20 @@ app.get('/trilhas/:specialtySlug', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
-      <script src="/static/dashboard.js"></script>
+      <script src="/static/app-cards.js"></script>
       <script>{`
-        const specialtyId = ${specialty.id};
-        
-        async function loadSpecialtyTracks() {
-          try {
-            const response = await axios.get('/tracks');
-            const allTracks = response.data;
-            const tracks = allTracks.filter(t => t.specialty_id === specialtyId);
-            
-            const grid = document.getElementById('tracksGrid');
-            if (tracks.length === 0) {
-              grid.innerHTML = '<div class="col-span-full text-center py-12 text-text-secondary bg-theme-secondary rounded-xl border border-theme">Nenhuma trilha disponível nesta especialidade ainda.</div>';
-              return;
-            }
-            
-            grid.innerHTML = tracks.map(track => \`
-              <a href="/trilha/\${track.slug}" class="card group hover:border-purple-500 transition-all duration-300 bg-theme-secondary flex flex-col h-full">
-                <div class="h-48 bg-theme-tertiary relative overflow-hidden rounded-t-xl">
-                  \${track.cover_image ? 
-                    \`<img src="\${track.cover_image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">\` :
-                    \`<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-pink-500/10"><i class="fas fa-book-medical text-5xl text-purple-500/30"></i></div>\`
-                  }
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                  <div class="absolute bottom-4 left-4 right-4">
-                    <h3 class="font-bold text-xl text-white drop-shadow-md">\${track.title}</h3>
-                  </div>
-                </div>
-                <div class="p-6 flex-1 flex flex-col">
-                  <p class="text-text-secondary text-sm mb-6 line-clamp-2 flex-1">\${track.description || 'Sem descrição.'}</p>
-                  
-                  <div class="flex items-center justify-between text-xs text-text-tertiary border-t border-theme pt-4">
-                    <span class="flex items-center"><i class="fas fa-video mr-1.5"></i> \${track.total_lessons} aulas</span>
-                    <span class="flex items-center"><i class="fas fa-clock mr-1.5"></i> \${Math.round(track.duration_minutes / 60)}h</span>
-                  </div>
-                </div>
-              </a>
-            \`).join('');
-          } catch (error) {
-            console.error('Error:', error);
-          }
-        }
-        
-        loadSpecialtyTracks();
-      `}</script>
-    </BaseLayout>
-  );
-});
-
-// ========================================
-// TRILHAS PAGE (LISTAGEM)
-// ========================================
-app.get('/trilhas', async (c) => {
-  const user = await getUserFromToken(c);
-  
-  return c.html(
-    <BaseLayout title="Todas as Trilhas" user={user}>
-      {Header({ user, showSearch: true })}
-      
-      <main class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-8 text-text-primary font-heading">Todas as Trilhas</h1>
-        
-        <div class="flex gap-3 mb-10 overflow-x-auto pb-4 scrollbar-hidden">
-          <button onclick="filterBySpecialty('all')" class="filter-btn active px-5 py-2.5 rounded-full bg-purple-600 text-white font-medium shadow-md transition whitespace-nowrap border border-transparent">
-            Todas
-          </button>
-          <button onclick="filterBySpecialty('cardiologia')" class="filter-btn px-5 py-2.5 rounded-full bg-theme-tertiary text-text-secondary hover:bg-theme-secondary border border-theme transition whitespace-nowrap">
-            Cardiologia
-          </button>
-          <button onclick="filterBySpecialty('nefrologia')" class="filter-btn px-5 py-2.5 rounded-full bg-theme-tertiary text-text-secondary hover:bg-theme-secondary border border-theme transition whitespace-nowrap">
-            Nefrologia
-          </button>
-          <button onclick="filterBySpecialty('clinica')" class="filter-btn px-5 py-2.5 rounded-full bg-theme-tertiary text-text-secondary hover:bg-theme-secondary border border-theme transition whitespace-nowrap">
-            Clínica
-          </button>
-          <button onclick="filterBySpecialty('cirurgia')" class="filter-btn px-5 py-2.5 rounded-full bg-theme-tertiary text-text-secondary hover:bg-theme-secondary border border-theme transition whitespace-nowrap">
-            Cirurgia
-          </button>
-        </div>
-        
-        <div id="tracksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div class="col-span-full text-center py-20 text-text-tertiary">
-            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
-            <p>Carregando trilhas...</p>
-          </div>
-        </div>
-      </main>
-      
-      {Footer()}
-      
-      <script src="/static/dashboard.js"></script>
-      <script>{`
-        let allTracks = [];
-        let currentFilter = 'all';
-        
-        async function loadAllTracks() {
-          try {
-            const response = await axios.get('/tracks');
-            allTracks = response.data;
-            displayTracks(allTracks);
-          } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('tracksGrid').innerHTML = '<div class="col-span-full text-center py-12 text-red-500">Erro ao carregar trilhas</div>';
-          }
-        }
-        
-        function displayTracks(tracks) {
+        document.addEventListener('DOMContentLoaded', async () => {
           const grid = document.getElementById('tracksGrid');
-          if (tracks.length === 0) {
-            grid.innerHTML = '<div class="col-span-full text-center py-20 text-text-secondary bg-theme-secondary rounded-xl border border-theme">Nenhuma trilha encontrada nesta categoria.</div>';
-            return;
+          try {
+            const allTracks = await api.get('/tracks');
+            const tracks = allTracks.filter(track => track.specialty_id === ${specialty.id});
+            grid.innerHTML = tracks.length ? tracks.map(appCards.render).join('') : '<div class="app-empty">Nenhuma trilha disponível nesta especialidade ainda.</div>';
+          } catch (error) {
+            grid.innerHTML = '<div class="app-empty" role="alert">Não foi possível carregar as trilhas. Recarregue a página para tentar novamente.</div>';
           }
-          
-          grid.innerHTML = tracks.map(track => \`
-            <a href="/trilha/\${track.slug}" class="card group hover:-translate-y-1 transition-all duration-300 bg-theme-secondary flex flex-col h-full border border-theme hover:border-purple-500 hover:shadow-lg">
-              <div class="h-48 bg-theme-tertiary relative overflow-hidden rounded-t-xl">
-                \${track.cover_image ? 
-                  \`<img src="\${track.cover_image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">\` :
-                  \`<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-pink-500/10"><i class="fas fa-book-medical text-5xl text-purple-500/30"></i></div>\`
-                }
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-80"></div>
-                <div class="absolute bottom-0 left-0 right-0 p-5">
-                  <h3 class="font-bold text-xl text-white leading-tight">\${track.title}</h3>
-                </div>
-              </div>
-              <div class="p-5 flex-1 flex flex-col">
-                <p class="text-text-secondary text-sm mb-6 line-clamp-2 flex-1">\${track.description || 'Sem descrição.'}</p>
-                
-                \${track.user_progress ? \`
-                  <div class="mb-4">
-                    <div class="flex justify-between text-xs mb-1">
-                      <span class="text-text-secondary">Seu progresso</span>
-                      <span class="text-purple-500 font-bold">\${Math.round(track.user_progress)}%</span>
-                    </div>
-                    <div class="w-full bg-theme-tertiary rounded-full h-1.5">
-                      <div class="bg-purple-500 h-full rounded-full" style="width: \${track.user_progress}%"></div>
-                    </div>
-                  </div>
-                \` : ''}
-                
-                <div class="flex items-center justify-between text-xs text-text-tertiary border-t border-theme pt-4 mt-auto">
-                  <span class="flex items-center"><i class="fas fa-video mr-1.5"></i> \${track.total_lessons} aulas</span>
-                  <span class="flex items-center"><i class="fas fa-clock mr-1.5"></i> \${Math.round(track.duration_minutes / 60)}h</span>
-                </div>
-              </div>
-            </a>
-          \`).join('');
-        }
-        
-        function filterBySpecialty(specialty) {
-          currentFilter = specialty;
-          
-          // Update button styles
-          document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active', 'bg-purple-600', 'text-white');
-            btn.classList.add('bg-theme-tertiary', 'text-text-secondary', 'border-theme');
-          });
-          event.target.classList.remove('bg-theme-tertiary', 'text-text-secondary', 'border-theme');
-          event.target.classList.add('active', 'bg-purple-600', 'text-white');
-          
-          // Filter tracks
-          if (specialty === 'all') {
-            displayTracks(allTracks);
-          } else {
-            const filtered = allTracks.filter(track => {
-              return track.slug.includes(specialty);
-            });
-            displayTracks(filtered);
-          }
-        }
-        
-        loadAllTracks();
+        });
       `}</script>
     </BaseLayout>
   );
@@ -1026,7 +844,7 @@ app.get('/perfil', async (c) => {
     <BaseLayout title="Meu Perfil" user={user}>
       {Header({ user, showSearch: true })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-8 text-text-primary font-heading">Configurações de Perfil</h1>
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1037,7 +855,7 @@ app.get('/perfil', async (c) => {
               <form id="profileForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-semibold mb-2 text-text-primary">Nome Completo</label>
+                    <label for="name" class="block text-sm font-semibold mb-2 text-text-primary">Nome Completo</label>
                     <input 
                       type="text" 
                       id="name"
@@ -1048,7 +866,7 @@ app.get('/perfil', async (c) => {
                   </div>
                   
                   <div>
-                    <label class="block text-sm font-semibold mb-2 text-text-primary">E-mail</label>
+                    <label for="email" class="block text-sm font-semibold mb-2 text-text-primary">E-mail</label>
                     <input 
                       type="email" 
                       id="email"
@@ -1130,7 +948,7 @@ app.get('/perfil', async (c) => {
                     <p class="text-xs text-text-secondary uppercase tracking-wide">Trilhas Iniciadas</p>
                     <p id="totalTracks" class="text-2xl font-bold text-text-primary">0</p>
                   </div>
-                  <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                  <div class="w-10 h-10 rounded-full bg-ink-500/10 flex items-center justify-center text-ink-500">
                     <i class="fas fa-book text-xl"></i>
                   </div>
                 </div>
@@ -1140,7 +958,7 @@ app.get('/perfil', async (c) => {
                     <p class="text-xs text-text-secondary uppercase tracking-wide">Progresso Médio</p>
                     <p id="avgProgress" class="text-2xl font-bold text-text-primary">0%</p>
                   </div>
-                  <div class="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500">
+                  <div class="w-10 h-10 rounded-full bg-navy-500/10 flex items-center justify-center text-navy-500">
                     <i class="fas fa-chart-line text-xl"></i>
                   </div>
                 </div>
@@ -1160,7 +978,7 @@ app.get('/perfil', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       <script src="/static/profile.js"></script>
     </BaseLayout>
@@ -1180,16 +998,16 @@ app.get('/admin', async (c) => {
     <BaseLayout title="Painel Admin" user={user}>
       {Header({ user, showSearch: false })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary font-heading">Painel Administrativo</h1>
-          <a href="/dashboard" class="text-purple-500 hover:text-purple-600 transition flex items-center text-sm font-medium">
-            <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+          <a href="/dashboard" class="text-ink-500 hover:text-ink-600 transition flex items-center text-sm font-medium">
+            Voltar ao Dashboard
           </a>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-800 text-white border-none shadow-lg hover:-translate-y-1 transition-transform">
+          <div class="card app-stat-card p-6 border-none shadow-lg hover:-translate-y-1 transition-transform">
             <div class="flex items-center justify-between mb-4">
               <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-users text-xl"></i>
@@ -1197,10 +1015,10 @@ app.get('/admin', async (c) => {
               <span class="text-xs font-bold bg-white/20 px-2 py-1 rounded">Total</span>
             </div>
             <span id="totalUsers" class="text-4xl font-bold block mb-1">0</span>
-            <p class="text-purple-100 text-sm">Usuários Cadastrados</p>
+            <p class="text-ink-100 text-sm">Usuários Cadastrados</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-pink-600 to-pink-800 text-white border-none shadow-lg hover:-translate-y-1 transition-transform">
+          <div class="card app-stat-card p-6 border-none shadow-lg hover:-translate-y-1 transition-transform">
             <div class="flex items-center justify-between mb-4">
               <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-book text-xl"></i>
@@ -1208,10 +1026,10 @@ app.get('/admin', async (c) => {
               <span class="text-xs font-bold bg-white/20 px-2 py-1 rounded">Ativas</span>
             </div>
             <span id="totalTracks" class="text-4xl font-bold block mb-1">0</span>
-            <p class="text-pink-100 text-sm">Trilhas Disponíveis</p>
+            <p class="text-navy-100 text-sm">Trilhas Disponíveis</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none shadow-lg hover:-translate-y-1 transition-transform">
+          <div class="card app-stat-card p-6 border-none shadow-lg hover:-translate-y-1 transition-transform">
             <div class="flex items-center justify-between mb-4">
               <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-video text-xl"></i>
@@ -1222,7 +1040,7 @@ app.get('/admin', async (c) => {
             <p class="text-blue-100 text-sm">Aulas Publicadas</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-green-600 to-green-800 text-white border-none shadow-lg hover:-translate-y-1 transition-transform">
+          <div class="card app-stat-card p-6 border-none shadow-lg hover:-translate-y-1 transition-transform">
             <div class="flex items-center justify-between mb-4">
               <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <i class="fas fa-eye text-xl"></i>
@@ -1238,16 +1056,16 @@ app.get('/admin', async (c) => {
           <div class="lg:col-span-2 card p-6 bg-theme-secondary border-theme">
             <h2 class="text-xl font-bold mb-6 text-text-primary border-b border-theme pb-4">Gerenciamento</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <a href="/admin/trilhas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-purple-500/10 hover:border-purple-500 border border-theme transition flex flex-col items-center justify-center text-center group">
-                <i class="fas fa-book-medical text-3xl mb-3 text-purple-500 group-hover:scale-110 transition-transform"></i>
+              <a href="/admin/trilhas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-ink-500/10 hover:border-ink-500 border border-theme transition flex flex-col items-center justify-center text-center group">
+                <i class="fas fa-book-medical text-3xl mb-3 text-ink-500 group-hover:scale-110 transition-transform"></i>
                 <p class="font-semibold text-text-primary">Trilhas</p>
               </a>
-              <a href="/admin/temporadas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-indigo-500/10 hover:border-indigo-500 border border-theme transition flex flex-col items-center justify-center text-center group">
-                <i class="fas fa-layer-group text-3xl mb-3 text-indigo-500 group-hover:scale-110 transition-transform"></i>
+              <a href="/admin/temporadas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-navy-500/10 hover:border-navy-500 border border-theme transition flex flex-col items-center justify-center text-center group">
+                <i class="fas fa-layer-group text-3xl mb-3 text-navy-500 group-hover:scale-110 transition-transform"></i>
                 <p class="font-semibold text-text-primary">Temporadas</p>
               </a>
-              <a href="/admin/aulas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-pink-500/10 hover:border-pink-500 border border-theme transition flex flex-col items-center justify-center text-center group">
-                <i class="fas fa-video text-3xl mb-3 text-pink-500 group-hover:scale-110 transition-transform"></i>
+              <a href="/admin/aulas" class="p-6 rounded-xl bg-theme-tertiary hover:bg-navy-500/10 hover:border-navy-500 border border-theme transition flex flex-col items-center justify-center text-center group">
+                <i class="fas fa-video text-3xl mb-3 text-navy-500 group-hover:scale-110 transition-transform"></i>
                 <p class="font-semibold text-text-primary">Aulas</p>
               </a>
               <a href="/admin/usuarios" class="p-6 rounded-xl bg-theme-tertiary hover:bg-blue-500/10 hover:border-blue-500 border border-theme transition flex flex-col items-center justify-center text-center group">
@@ -1268,7 +1086,7 @@ app.get('/admin', async (c) => {
           <div class="card p-6 bg-theme-secondary border-theme">
             <div class="flex items-center justify-between mb-6 border-b border-theme pb-4">
               <h2 class="text-xl font-bold text-text-primary">Atividade Recente</h2>
-              <span class="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded-full animate-pulse">Ao vivo</span>
+              <span class="text-xs bg-green-500/10 text-green-500 px-2 py-1 rounded-full">Recentes</span>
             </div>
             <div id="recentUsers" class="space-y-4 overflow-y-auto max-h-[300px] custom-scrollbar">
               <p class="text-text-secondary text-center py-4 text-sm">Carregando...</p>
@@ -1277,7 +1095,7 @@ app.get('/admin', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       <script src="/static/admin.js"></script>
     </BaseLayout>
@@ -1301,11 +1119,11 @@ app.get('/admin/usuarios', async (c) => {
     <BaseLayout title="Gerenciar Usuários" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary">Gerenciar Usuários</h1>
-          <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i>Voltar
+          <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center">
+            Voltar
           </a>
         </div>
         
@@ -1335,7 +1153,7 @@ app.get('/admin/usuarios', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       <script src="/static/admin-users.js"></script>
     </BaseLayout>
@@ -1452,12 +1270,12 @@ app.get('/admin/trilhas', async (c) => {
     <BaseLayout title="Gerenciar Trilhas" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary font-heading">Gerenciar Trilhas</h1>
           <div class="flex gap-4">
-            <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center font-medium">
-              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center font-medium">
+              Voltar
             </a>
             <button onclick="openCreateModal()" class="btn btn-primary flex items-center">
               <i class="fas fa-plus mr-2"></i>Nova Trilha
@@ -1473,7 +1291,7 @@ app.get('/admin/trilhas', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       {/* Modal */}
       <div id="modalOverlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1506,7 +1324,7 @@ app.get('/admin/trilhas', async (c) => {
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Título</label>
+                <label for="trackTitle" class="block text-sm font-semibold mb-2 text-text-primary">Título</label>
                 <input type="text" id="trackTitle" required class="input-field" placeholder="Ex: Emergências Cardiológicas" />
               </div>
               
@@ -1516,17 +1334,17 @@ app.get('/admin/trilhas', async (c) => {
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">URL da Imagem de Capa</label>
+                <label for="trackCoverImage" class="block text-sm font-semibold mb-2 text-text-primary">URL da Imagem de Capa</label>
                 <input type="url" id="trackCoverImage" placeholder="https://..." class="input-field" />
               </div>
               
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-text-primary">Total de Aulas</label>
+                  <label for="trackLessons" class="block text-sm font-semibold mb-2 text-text-primary">Total de Aulas</label>
                   <input type="number" id="trackLessons" required min="0" class="input-field" />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-text-primary">Duração (min)</label>
+                  <label for="trackDuration" class="block text-sm font-semibold mb-2 text-text-primary">Duração (min)</label>
                   <input type="number" id="trackDuration" required min="0" class="input-field" />
                 </div>
               </div>
@@ -1564,12 +1382,12 @@ app.get('/admin/temporadas', async (c) => {
     <BaseLayout title="Gerenciar Temporadas" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary font-heading">Gerenciar Temporadas</h1>
           <div class="flex gap-4">
-            <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center font-medium">
-              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center font-medium">
+              Voltar
             </a>
             <button onclick="openCreateModal()" class="btn btn-primary flex items-center">
               <i class="fas fa-plus mr-2"></i>Nova Temporada
@@ -1610,7 +1428,7 @@ app.get('/admin/temporadas', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       {/* Modal */}
       <div id="modalOverlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1637,7 +1455,7 @@ app.get('/admin/temporadas', async (c) => {
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
+                <label for="seasonTitle" class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
                 <input type="text" id="seasonTitle" required placeholder="Ex: Temporada 1: Fundamentos" class="input-field" />
               </div>
               
@@ -1647,12 +1465,12 @@ app.get('/admin/temporadas', async (c) => {
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Ordem de Exibição *</label>
+                <label for="seasonOrder" class="block text-sm font-semibold mb-2 text-text-primary">Ordem de Exibição *</label>
                 <input type="number" id="seasonOrder" required min="1" value="1" class="input-field" />
               </div>
               
               <div class="flex items-center p-4 bg-theme-tertiary rounded-lg border border-theme">
-                <input type="checkbox" id="seasonActive" checked class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 bg-theme-secondary border-theme" />
+                <input type="checkbox" id="seasonActive" checked class="w-5 h-5 text-ink-600 rounded focus:ring-ink-500 bg-theme-secondary border-theme" />
                 <label for="seasonActive" class="ml-3 text-sm font-medium text-text-primary">Temporada ativa (visível para os alunos)</label>
               </div>
               
@@ -1689,12 +1507,12 @@ app.get('/admin/aulas', async (c) => {
     <BaseLayout title="Gerenciar Aulas" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary font-heading">Gerenciar Aulas</h1>
           <div class="flex gap-4">
-            <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center font-medium">
-              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center font-medium">
+              Voltar
             </a>
             <button onclick="openCreateModal()" class="btn btn-primary flex items-center">
               <i class="fas fa-plus mr-2"></i>Nova Aula
@@ -1720,7 +1538,7 @@ app.get('/admin/aulas', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
       {/* Modal */}
       <div id="modalOverlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1758,7 +1576,7 @@ app.get('/admin/aulas', async (c) => {
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
+                <label for="lessonTitle" class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
                 <input type="text" id="lessonTitle" required class="input-field" placeholder="Ex: Fisiopatologia da IC" />
               </div>
               
@@ -1769,17 +1587,17 @@ app.get('/admin/aulas', async (c) => {
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-text-primary">URL do Vídeo *</label>
+                  <label for="lessonVideoUrl" class="block text-sm font-semibold mb-2 text-text-primary">URL do Vídeo *</label>
                   <input type="url" id="lessonVideoUrl" required class="input-field" placeholder="https://youtube.com/..." />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-text-primary">Duração (minutos)</label>
+                  <label for="lessonDuration" class="block text-sm font-semibold mb-2 text-text-primary">Duração (minutos)</label>
                   <input type="number" id="lessonDuration" min="0" class="input-field" />
                 </div>
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">URL do PDF (opcional)</label>
+                <label for="lessonPdfUrl" class="block text-sm font-semibold mb-2 text-text-primary">URL do PDF (opcional)</label>
                 <input type="url" id="lessonPdfUrl" class="input-field" placeholder="https://..." />
               </div>
               
@@ -1822,12 +1640,12 @@ app.get('/admin/notificacoes', async (c) => {
     <BaseLayout title="Gerenciar Notificações" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-3xl font-bold text-text-primary font-heading">Gerenciar Notificações</h1>
           <div class="flex gap-4">
-            <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center font-medium">
-              <i class="fas fa-arrow-left mr-2"></i>Voltar
+            <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center font-medium">
+              Voltar
             </a>
             <button onclick="openCreateModal()" class="btn btn-primary flex items-center">
               <i class="fas fa-plus mr-2"></i>Nova Notificação
@@ -1843,6 +1661,8 @@ app.get('/admin/notificacoes', async (c) => {
         </div>
       </main>
       
+      {Footer({ user })}
+
       {/* Modal */}
       <div id="notificationModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-theme-secondary border-theme shadow-2xl modal-content">
@@ -1858,7 +1678,7 @@ app.get('/admin/notificacoes', async (c) => {
               <input type="hidden" id="notificationId" />
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
+                <label for="title" class="block text-sm font-semibold mb-2 text-text-primary">Título *</label>
                 <input type="text" id="title" required class="input-field" placeholder="Ex: Nova trilha disponível" />
               </div>
               
@@ -1882,23 +1702,23 @@ app.get('/admin/notificacoes', async (c) => {
                 </div>
                 
                 <div>
-                  <label class="block text-sm font-semibold mb-2 text-text-primary">Ícone (Font Awesome)</label>
+                  <label for="icon" class="block text-sm font-semibold mb-2 text-text-primary">Ícone (Font Awesome)</label>
                   <input type="text" id="icon" class="input-field" placeholder="Ex: fa-rocket" />
                 </div>
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Link (URL)</label>
+                <label for="link_url" class="block text-sm font-semibold mb-2 text-text-primary">Link (URL)</label>
                 <input type="text" id="link_url" class="input-field" placeholder="Ex: /trilhas/cardiologia" />
               </div>
               
               <div>
-                <label class="block text-sm font-semibold mb-2 text-text-primary">Expira em</label>
+                <label for="expires_at" class="block text-sm font-semibold mb-2 text-text-primary">Expira em</label>
                 <input type="datetime-local" id="expires_at" class="input-field" />
               </div>
               
               <div class="flex items-center p-4 bg-theme-tertiary rounded-lg border border-theme">
-                <input type="checkbox" id="is_active" checked class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 bg-theme-secondary border-theme" />
+                <input type="checkbox" id="is_active" checked class="w-5 h-5 text-ink-600 rounded focus:ring-ink-500 bg-theme-secondary border-theme" />
                 <label for="is_active" class="ml-3 text-sm font-medium text-text-primary">Notificação ativa</label>
               </div>
               
@@ -1933,20 +1753,20 @@ app.get('/admin/relatorios', async (c) => {
     <BaseLayout title="Relatórios" user={user}>
       {Header({ user })}
       
-      <main class="container mx-auto px-4 py-8">
+      <main id="app-main" tabindex="-1" class="container mx-auto px-4 py-8">
         <div class="flex items-center justify-between mb-8">
           <div>
             <h1 class="text-3xl font-bold text-text-primary font-heading mb-2">Relatórios e Estatísticas</h1>
-            <p class="text-text-secondary">Análise completa de uso e desempenho da plataforma</p>
+            <p class="text-text-secondary">Visão acumulada dos dados disponíveis na plataforma</p>
           </div>
-          <a href="/admin" class="text-purple-500 hover:text-purple-600 transition flex items-center font-medium">
-            <i class="fas fa-arrow-left mr-2"></i>Voltar ao Admin
+          <a href="/admin" class="text-ink-500 hover:text-ink-600 transition flex items-center font-medium">
+            Voltar ao Admin
           </a>
         </div>
         
         {/* Stats Grid */}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-800 text-white border-none">
+          <div class="card app-stat-card p-6 border-none">
             <div class="flex items-center justify-between mb-4">
               <i class="fas fa-users text-3xl opacity-80"></i>
               <div class="text-right">
@@ -1957,34 +1777,34 @@ app.get('/admin/relatorios', async (c) => {
             <p class="font-medium">Total de Usuários</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-pink-600 to-pink-800 text-white border-none">
+          <div class="card app-stat-card p-6 border-none">
             <div class="flex items-center justify-between mb-4">
               <i class="fas fa-video text-3xl opacity-80"></i>
               <div class="text-right">
                 <p class="text-3xl font-bold" id="reportTotalViews">0</p>
-                <p class="text-xs opacity-70" id="reportViewsToday">+0 hoje</p>
+                <p class="text-xs opacity-70" id="reportViewsToday">acumuladas</p>
               </div>
             </div>
             <p class="font-medium">Visualizações</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none">
+          <div class="card app-stat-card p-6 border-none">
             <div class="flex items-center justify-between mb-4">
               <i class="fas fa-chart-line text-3xl opacity-80"></i>
               <div class="text-right">
-                <p class="text-3xl font-bold" id="reportCompletionRate">0%</p>
+                <p class="text-3xl font-bold" id="reportCompletionRate">—</p>
                 <p class="text-xs opacity-70">média geral</p>
               </div>
             </div>
-            <p class="font-medium">Taxa de Conclusão</p>
+            <p class="font-medium">Progresso Médio</p>
           </div>
           
-          <div class="card p-6 bg-gradient-to-br from-green-600 to-green-800 text-white border-none">
+          <div class="card app-stat-card p-6 border-none">
             <div class="flex items-center justify-between mb-4">
               <i class="fas fa-clock text-3xl opacity-80"></i>
               <div class="text-right">
-                <p class="text-3xl font-bold" id="reportAvgTime">0h</p>
-                <p class="text-xs opacity-70">por usuário</p>
+                <p class="text-3xl font-bold" id="reportAvgTime">—</p>
+                <p class="text-xs opacity-70">medição indisponível</p>
               </div>
             </div>
             <p class="font-medium">Tempo Médio</p>
@@ -1993,23 +1813,11 @@ app.get('/admin/relatorios', async (c) => {
         
         {/* Controls */}
         <div class="card p-6 bg-theme-secondary border-theme mb-8 flex flex-wrap gap-4 items-center justify-between">
-          <div class="flex items-center gap-3">
-            <label class="text-sm font-medium text-text-primary">Período:</label>
-            <div class="relative">
-              <select id="periodFilter" class="input-field py-2 pl-3 pr-8 text-sm appearance-none bg-theme-tertiary border-none">
-                <option value="7">Últimos 7 dias</option>
-                <option value="30" selected>Últimos 30 dias</option>
-                <option value="90">Últimos 90 dias</option>
-                <option value="365">Último ano</option>
-                <option value="all">Todo o período</option>
-              </select>
-              <i class="fas fa-chevron-down absolute right-3 top-2.5 text-xs text-text-tertiary pointer-events-none"></i>
-            </div>
-            <button onclick="refreshReports()" class="btn btn-secondary py-2 px-4 text-sm">
-              <i class="fas fa-sync-alt mr-2"></i>Atualizar
-            </button>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm text-text-secondary">Todo o período</span>
+            <button onclick="refreshReports()" class="btn btn-secondary py-2 px-4 text-sm"><i class="fas fa-sync-alt mr-2" aria-hidden="true"></i>Atualizar</button>
           </div>
-          
+
           <button onclick="exportReport()" class="btn btn-primary py-2 px-4 text-sm bg-green-600 hover:bg-green-700 border-none">
             <i class="fas fa-download mr-2"></i>Exportar CSV
           </button>
@@ -2039,12 +1847,12 @@ app.get('/admin/relatorios', async (c) => {
           </div>
         </div>
         
-        {/* Usuários Mais Ativos */}
+        {/* Acessos Recentes */}
         <div class="card bg-theme-secondary border-theme mb-8 overflow-hidden">
           <div class="p-6 border-b border-theme">
             <h2 class="text-xl font-bold flex items-center text-text-primary">
-              <i class="fas fa-medal text-purple-500 mr-3"></i>
-              Usuários Mais Ativos
+              <i class="fas fa-medal text-ink-500 mr-3"></i>
+              Acessos Recentes
             </h2>
           </div>
           <div class="overflow-x-auto">
@@ -2053,14 +1861,13 @@ app.get('/admin/relatorios', async (c) => {
                 <tr>
                   <th class="text-left py-3 px-6 text-text-primary font-semibold">Posição</th>
                   <th class="text-left py-3 px-6 text-text-primary font-semibold">Usuário</th>
-                  <th class="text-left py-3 px-6 text-text-primary font-semibold">Aulas</th>
-                  <th class="text-left py-3 px-6 text-text-primary font-semibold">Trilhas</th>
-                  <th class="text-left py-3 px-6 text-text-primary font-semibold">Tempo</th>
+                  <th class="text-left py-3 px-6 text-text-primary font-semibold">Perfil</th>
+                  <th class="text-left py-3 px-6 text-text-primary font-semibold">Progresso médio</th>
                   <th class="text-left py-3 px-6 text-text-primary font-semibold">Último Acesso</th>
                 </tr>
               </thead>
               <tbody id="activeUsersBody" class="divide-y divide-theme">
-                <tr><td colspan="6" class="text-center text-text-tertiary py-8">Carregando...</td></tr>
+                <tr><td colspan="5" class="text-center text-text-tertiary py-8">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2093,8 +1900,9 @@ app.get('/admin/relatorios', async (c) => {
         </div>
       </main>
       
-      {Footer()}
+      {Footer({ user })}
       
+      <script src="/static/app-cards.js"></script>
       <script src="/static/admin-reports.js"></script>
     </BaseLayout>
   );
